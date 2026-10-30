@@ -15,7 +15,9 @@ node_modules/
 artifacts/
 cache/
 coverage/
-.vscode/
+.vscode/*
+!.vscode/
+!.vscode/mcp.json
 .DS_Store
 Thumbs.db
 *.log
