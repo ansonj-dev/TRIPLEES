@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#063a2c" />
+  <meta name="description" content="TRIPLEES climate project investigation workspace for evidence intelligence, agent activity, risk review, and traceable reports." />
+  <title>Workspace — TRIPLEES</title>
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/app.css" />
+  <link rel="stylesheet" href="assets/css/workspace-ui.css?v=12" />
+</head>
+<body class="workspace-body">
+  <a class="skip-link" href="#page-content">Skip to workspace content</a>
+  <div id="app" class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Application navigation">
+      <div class="sidebar-head"><a class="app-brand" href="index.html"><span class="leaf-mark">◢</span><span>TRIPLEES</span></a><button class="collapse-btn" data-action="collapse" aria-label="Collapse sidebar" title="Collapse sidebar"><i data-lucide="panel-left-close" aria-hidden="true"></i></button></div>
+      <div class="workspace-pill"><span class="workspace-avatar">T</span><span><b>TRIPLEES workspace</b><small>Local prototype</small></span><span class="workspace-caret">⌄</span></div>
+      <nav class="side-nav" id="side-nav" aria-label="Workspace pages"></nav>
+      <div class="sidebar-bottom"><div class="impact-mini"><span class="impact-leaf">♧</span><div><small>DEMO IMPACT</small><strong id="side-impact">— tCO₂e</strong><span>Illustrative workspace</span></div></div><div class="sidebar-user"><span class="user-avatar">JD</span><span><b>Jordan Demo</b><small>Demo reviewer</small></span><button aria-label="Account options" class="user-more">···</button></div></div>
+    </aside>
+    <div class="sidebar-backdrop" data-action="close-sidebar"></div>
+    <main class="workspace-main">
+      <header class="topbar">
+        <button class="mobile-menu" data-action="open-sidebar" aria-label="Open navigation" title="Open navigation"><i data-lucide="menu" aria-hidden="true"></i></button>
+        <div class="breadcrumbs" id="breadcrumbs"><span>Workspace</span><b>/</b><strong>Dashboard</strong></div>
+        <label class="global-search"><span aria-hidden="true"><i data-lucide="search"></i></span><input id="global-search" type="search" placeholder="Search workspace…" aria-label="Search projects, credits, or locations" /><kbd>⌘ K</kbd><div class="search-results" id="search-results" hidden></div></label>
+        <span class="demo-badge"><i></i> DEMO ENVIRONMENT</span>
+        <span class="demo-badge chain-badge" id="blockchain-badge" title="Live read-only X1 Maculatus RPC status"><i></i> X1 CHECKING</span>
+        <button class="top-icon" data-route="/alerts" aria-label="Open alerts" title="Alerts"><i data-lucide="bell" aria-hidden="true"></i><span class="alert-count" id="alert-count" hidden>0</span></button>
+        <button class="account-button" data-action="account"><span class="user-avatar">JD</span><span><b>Jordan Demo</b><small>Individual · Demo</small></span><span>⌄</span></button>
+      </header>
+      <div class="demo-notice"><b>DEMO DATA — NOT CERTIFIED CARBON CREDITS</b><span>Local prototype · X1 testnet contract connected · fictional QA records remain labeled DEMO</span><button data-action="dismiss-notice" aria-label="Dismiss demo notice">×</button></div>
+      <section id="page-content" class="page-content" tabindex="-1"></section>
+      <footer class="workspace-footer"><span>TRIPLEES · Local prototype</span><span>Investigate. Verify. Trace.</span><a href="index.html">Landing page ↗</a></footer>
+    </main>
+    <div id="modal-root"></div>
+    <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+  </div>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script src="assets/js/app.js?v=report-anchoring-1"></script>
+</body>
+</html>

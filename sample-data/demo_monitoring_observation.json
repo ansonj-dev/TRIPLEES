@@ -1,0 +1,11 @@
+{
+  "is_demo": true,
+  "project_code": "DEMO-FOREST-001",
+  "source_name": "TRIPLEES synthetic monitoring fixture",
+  "signal_type": "forest_loss",
+  "severity": "high",
+  "affected_area_percent": 18,
+  "observed_at": "2026-01-20T10:00:00Z",
+  "description": "Synthetic demonstration event only; not a real satellite observation.",
+  "recommended_state": "AT_RISK"
+}

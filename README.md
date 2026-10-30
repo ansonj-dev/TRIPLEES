@@ -220,4 +220,3 @@ Only [frontend](frontend) is publicly mounted. Original evidence downloads use a
 - The marketplace remains a preview and does not sell credits.
 
 Reset synthetic data from **Settings > Reset demo workspace** or the authenticated `POST /api/demo/reset` endpoint.
-

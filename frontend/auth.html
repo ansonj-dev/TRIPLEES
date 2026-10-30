@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#063a2c" />
+  <title>Sign in — TRIPLEES</title>
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/auth.css?v=readability-2" />
+</head>
+<body>
+  <a class="skip-link" href="#auth-title">Skip to sign in</a>
+  <main class="auth-shell">
+    <a href="index.html" class="auth-brand"><span class="brand-icon">◢</span> TRIPLEES</a>
+    <section class="auth-card">
+      <div class="auth-heading"><p class="eyebrow">EVIDENCE-GROUNDED CARBON INTEGRITY</p><h1 id="auth-title" tabindex="-1">Welcome back</h1><p id="auth-subtitle">Sign in to your local TRIPLEES workspace.</p></div>
+      <div class="auth-tabs" role="tablist" aria-label="Account actions"><button class="auth-tab active" type="button" data-auth-mode="login" role="tab" aria-selected="true">Sign in</button><button class="auth-tab" type="button" data-auth-mode="signup" role="tab" aria-selected="false">Create account</button></div>
+      <div id="auth-message" class="auth-message" aria-live="polite" hidden></div>
+      <form id="auth-form" novalidate>
+        <div class="auth-field" data-signup-only hidden><label for="auth-name">Full name</label><input id="auth-name" name="display_name" autocomplete="name" minlength="2" maxlength="160" placeholder="Your name"></div>
+        <div class="auth-field"><label for="auth-email">Email</label><input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="320" placeholder="you@example.com"></div>
+        <div class="auth-field"><label for="auth-password">Password</label><input id="auth-password" name="password" type="password" autocomplete="current-password" required minlength="10" maxlength="200" placeholder="At least 10 characters"><small data-signup-only hidden>Use at least 10 characters. Passwords are hashed by the local API.</small></div>
+        <div class="auth-field" data-signup-only hidden><label for="auth-organization">Organization <span>Optional</span></label><input id="auth-organization" name="organization" autocomplete="organization" maxlength="200" placeholder="Organization or project team"></div>
+        <button class="auth-submit" id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <div class="auth-divider"><span>or</span></div>
+      <button class="demo-button" id="demo-login" type="button">Explore the demo workspace</button>
+      <p class="auth-legal">Use demo access for synthetic records. Do not enter private or sensitive data. Email verification, password reset, multi-factor authentication, and production identity services are not configured. Demo records are not certified carbon credits.</p>
+    </section>
+    <a class="back-link" href="index.html">← Back to TRIPLEES</a>
+    <div class="auth-image" role="img" aria-label="Forest canopy and river landscape"></div>
+  </main>
+  <script src="assets/js/auth.js?v=triplees-brand-1"></script>
+</body>
+</html>

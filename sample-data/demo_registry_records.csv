@@ -1,0 +1,4 @@
+source_name,external_project_id,external_project_name,external_serial,vintage_start,vintage_end,methodology_id,country,region,quantity_kg_co2e,status,source_timestamp,is_demo
+DEMO-Registry-A,DEMO-FOREST-001,Demo Forest Project ES-001,DEMO-SERIAL-0001,2024-01-01,2024-12-31,DEMO-FOREST-METHODOLOGY,Spain,Demo Region,1000000,active,2026-01-15T12:00:00Z,true
+DEMO-Registry-B,DEMO-FOREST-ALT-001,Demo Forest Project ES-001,DEMO-SERIAL-0001,2024-01-01,2024-12-31,DEMO-FOREST-METHODOLOGY,Spain,Demo Region,1000000,active,2026-01-16T12:00:00Z,true
+DEMO-Registry-A,DEMO-SOIL-002,Demo Soil Project ES-002,DEMO-SERIAL-0002,2024-01-01,2024-12-31,DEMO-SOIL-METHODOLOGY,Spain,Demo Region,250000,retired,2026-01-18T12:00:00Z,true

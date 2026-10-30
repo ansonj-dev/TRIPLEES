@@ -1,0 +1,16 @@
+{
+  "is_demo": true,
+  "project_code": "DEMO-FOREST-001",
+  "name": "Demo Forest Project ES-001",
+  "project_type": "forest",
+  "country": "Spain",
+  "region": "Demo Region",
+  "methodology_id": "DEMO-FOREST-METHODOLOGY",
+  "vintage_start": "2024-01-01",
+  "vintage_end": "2024-12-31",
+  "registry_name": "DEMO-Registry-A",
+  "registry_project_ref": "DEMO-FOREST-001",
+  "baseline_summary": "Synthetic baseline for product demonstration only.",
+  "boundary_geojson": null,
+  "is_demo_notice": "DEMO DATA \u2014 NOT CERTIFIED CARBON CREDITS"
+}

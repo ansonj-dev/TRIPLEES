@@ -1,0 +1,11 @@
+{
+  "name": "vericarb-registry",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "test": "hardhat test", "compile": "hardhat compile", "deploy:local": "hardhat run scripts/deploy.js --network hardhat", "chain:check": "node scripts/check-network.js", "chain:deploy:testnet": "node scripts/deploy-testnet.js", "chain:deploy:report-anchor": "node scripts/deploy-report-anchor-testnet.js", "chain:configure:testnet": "node scripts/configure-testnet.js", "chain:verify:testnet": "node scripts/verify-testnet.js", "chain:test:lifecycle": "node scripts/test-lifecycle-testnet.js" },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.7"
+  }
+}
