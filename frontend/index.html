@@ -9,8 +9,9 @@
     <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="assets/css/styles.css" />
+    <link rel="stylesheet" href="assets/css/design-refresh.css?v=4" />
   </head>
   <body>
     <header class="site-header" id="home">
@@ -21,8 +22,8 @@
         </a>
         <button class="menu-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span></button>
         <nav class="primary-nav" id="primary-nav" aria-label="Primary navigation">
-          <a href="#home">Home</a><a href="#about">About</a><a href="#features">Features</a><a href="#how-it-works">How It Works</a><a href="#impact">Impact</a><a href="#demo">Demo</a><a href="#resources">Resources</a>
-          <a class="button button-small button-primary nav-cta" href="app.html#/dashboard">Get Started <span aria-hidden="true">↗</span></a>
+          <a href="#features">Product</a><a href="#how-it-works">Workflow</a><a href="#demo">Demo</a><a href="#resources">FAQ</a>
+          <a class="button button-small button-primary nav-cta" href="auth.html">Open workspace <span aria-hidden="true">↗</span></a>
         </nav>
       </div>
     </header>
@@ -32,12 +33,10 @@
         <div class="hero-image" role="img" aria-label="Aerial view of a protected forest canopy and winding river"></div>
         <div class="hero-shade"></div>
         <div class="container hero-content">
-          <span class="eyebrow eyebrow-light"><span class="live-dot"></span> EVIDENCE WITH VISIBLE LIMITS.</span>
-          <p class="hero-kicker">Investigate. Verify. Trace.</p>
-          <h1 id="hero-title">Verifiable climate action for a <em>cleaner, fairer planet.</em></h1>
-          <p class="hero-copy">Organize project records, inspect supporting documents, compare imported registry rows, and review risk signals in one evidence-grounded workflow.</p>
-          <div class="hero-actions"><a class="button button-mint" href="app.html#/dashboard">Explore the Platform <span aria-hidden="true">→</span></a><a class="button button-glass" href="#demo"><span class="play-icon" aria-hidden="true">▶</span> Watch Demo</a></div>
-          <p class="hero-note">Built for traceability and review. Evidence quality and source coverage remain visible.</p>
+          <p class="hero-kicker">Climate project integrity</p>
+          <h1 id="hero-title">Follow every claim back to its evidence.</h1>
+          <p class="hero-copy">Bring project records, supporting documents, registry data, and review decisions into one clear workspace.</p>
+          <div class="hero-actions"><a class="button button-mint" href="auth.html">Explore the workspace <span aria-hidden="true">→</span></a><a class="button button-glass" href="#demo">View the demo</a></div>
         </div>
         <div class="container trust-row" aria-label="Platform principles">
           <div class="trust-item"><span class="icon-disc"><svg viewBox="0 0 24 24"><path d="M20 4C10 4 4 8 4 14c0 3.5 2.5 5.5 5.5 5.5C15.5 19.5 20 13 20 4Z"/><path d="M3 21c4-6 8-9 13-12"/></svg></span><span>Traceable<br/>project records</span></div>
@@ -47,108 +46,62 @@
         </div>
       </section>
 
-      <section class="section about-section" id="about">
-        <div class="container about-grid">
-          <div class="about-copy"><p class="eyebrow">ABOUT TRIPLEES</p><h2>Building trust in climate claims</h2><p class="lead">TRIPLEES connects project and credit records, supporting evidence, registry imports, monitoring observations, and human review—so people can inspect what supports a claim and what remains unresolved.</p><p>Blockchain can preserve a tamper-evident history. Evidence review and monitoring add context; they do not, on their own, prove an environmental outcome.</p><a class="text-link" href="#how-it-works">See how it works <span aria-hidden="true">→</span></a></div>
-          <div class="about-visual">
-            <img src="https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1000&q=85" alt="Sunlight across a forested mountain valley" loading="lazy" />
-            <div class="photo-caption"><span class="brand-mark small" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span><span><strong>Evidence with context</strong><small>Source coverage stays visible</small></span></div>
-          </div>
-          <div class="proof-grid">
-            <div class="proof-item"><span class="proof-icon">✓</span><div><strong>Traceable credits</strong><small>Follow lifecycle events and references</small></div></div>
-            <div class="proof-item"><span class="proof-icon">◷</span><div><strong>Ongoing monitoring</strong><small>Signals support review over time</small></div></div>
-            <div class="proof-item"><span class="proof-icon">◎</span><div><strong>Open by design</strong><small>Adapters can support future integrations</small></div></div>
-            <div class="proof-item"><span class="proof-icon">⌁</span><div><strong>Human-led integrity</strong><small>Reviewers decide on material findings</small></div></div>
-          </div>
-        </div>
-      </section>
-
       <section class="section section-soft" id="features">
-        <div class="container"><div class="section-heading"><p class="eyebrow">KEY FEATURES</p><h2>Tools for evidence-led carbon integrity</h2><p>One clear view across records, evidence, and emerging risk.</p></div>
+        <div class="container"><div class="section-heading"><p class="eyebrow">THE WORKSPACE</p><h2>Evidence, records, and decisions in context</h2><p>Built for teams that need to inspect the source behind a climate claim.</p></div>
           <div class="feature-grid">
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span><h3>Blockchain references</h3><p>Authorized testnet workflows can register projects, anchor evidence hashes, and issue reviewed batches.</p><span class="card-foot">A record does not certify a claim</span></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 4 4m14.4 1.6L20 4"/></svg></span><h3>Monitoring review</h3><p>Review imported or synthetic observations. No satellite, IoT, or field feed is connected by default.</p><span class="card-foot">Signals need human review</span></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><circle cx="19" cy="6" r="1"/></svg></span><h3>Evidence intelligence</h3><p>Extract candidate claims with page, row, or field locations for reviewers to inspect.</p><span class="card-foot">Decision support, not certification</span></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/><path d="m12 8 4 4M8 12l4 4"/></svg></span><h3>Registry conflict checks</h3><p>Find potential overlaps across records that have been imported or connected.</p><span class="card-foot">Coverage clearly disclosed</span></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 12h5M8 15h8"/></svg></span><h3>Registry imports</h3><p>Import CSV records and compare serials and project references within the supplied dataset.</p><span class="card-foot">Coverage is limited to imported rows</span></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.3-4 2.2-6 5.5-6s5.2 2 5.5 6M13 15c3.5-1 7.5.7 8.5 4"/></svg></span><h3>Human review</h3><p>Reviewers can record decisions on findings and reports; those decisions remain human-owned.</p><span class="card-foot">No AI certification decisions</span></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span><h3>Traceable records</h3><p>Follow project and credit lifecycle events, with optional testnet references.</p></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 4 4m14.4 1.6L20 4"/></svg></span><h3>Monitoring review</h3><p>Review imported observations and keep source, status, and uncertainty visible.</p></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><circle cx="19" cy="6" r="1"/></svg></span><h3>Evidence intelligence</h3><p>Inspect extracted claim candidates with page, row, or field references.</p></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/><path d="m12 8 4 4M8 12l4 4"/></svg></span><h3>Registry comparisons</h3><p>Compare supplied registry rows and flag potential serial or project overlaps.</p></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 12h5M8 15h8"/></svg></span><h3>Source-linked review</h3><p>Keep findings, evidence references, reviewer decisions, and reports connected.</p></article>
+            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.3-4 2.2-6 5.5-6s5.2 2 5.5 6M13 15c3.5-1 7.5.7 8.5 4"/></svg></span><h3>Human decisions</h3><p>Authorized reviewers own decisions on material findings and reports.</p></article>
           </div>
         </div>
       </section>
 
       <section class="section process-section" id="how-it-works">
-        <div class="container"><div class="section-heading"><p class="eyebrow">HOW TRIPLEES WORKS</p><h2>From data to a reviewable record</h2><p>An end-to-end workflow designed to support integrity, transparency, and trust.</p></div>
+        <div class="container"><div class="section-heading"><p class="eyebrow">A REVIEWABLE WORKFLOW</p><h2>Move from source to decision</h2><p>Each step keeps the underlying record available for inspection.</p></div>
           <div class="process-grid">
             <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></span><span class="step-number">01</span></div><h3>Add project records</h3><p>Enter project details, upload evidence, and import available registry rows.</p></article>
             <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 12h5M8 15h8"/><path d="m15 15 1.5 1.5L20 13"/></svg></span><span class="step-number">02</span></div><h3>Extract and compare</h3><p>Extract candidate claims, compare supplied records, and preserve source locations.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h6"/></svg></span><span class="step-number">03</span></div><h3>Investigate</h3><p>Run specialized agents when configured; external AI and public research require explicit consent and availability.</p></article>
+            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h6"/></svg></span><span class="step-number">03</span></div><h3>Investigate</h3><p>Bring scoped evidence and available sources into an investigation.</p></article>
             <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/></svg></span><span class="step-number">04</span></div><h3>Review findings</h3><p>Inspect evidence links, limitations, uncertainty, and decisions from authorized reviewers.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span class="step-number">05</span></div><h3>Report and preserve</h3><p>Generate versioned reports. Optional report commitments require reviewer approval and a separately configured X1 contract.</p></article>
+            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span class="step-number">05</span></div><h3>Report</h3><p>Preserve a versioned summary and its review history.</p></article>
           </div>
         </div>
       </section>
 
       <section class="demo-section" id="demo">
         <div class="container demo-grid">
-          <div class="demo-copy"><p class="eyebrow eyebrow-light">PLATFORM PREVIEW</p><h2>See transparency<br/>in action.</h2><p>Explore a fictional forest project, inspect evidence references, and follow a sample lifecycle in the TRIPLEES prototype.</p><span class="demo-stamp"><span class="live-dot"></span> ILLUSTRATIVE DEMO DATA</span><a class="button button-mint" href="#dashboard-preview">Explore the Preview <span aria-hidden="true">→</span></a></div>
+          <div class="demo-copy"><p class="eyebrow eyebrow-light">WORKSPACE PREVIEW</p><h2>See the record<br/>behind the review.</h2><p>Explore a sample project, its evidence status, and the decisions that need attention.</p><span class="demo-stamp"><span class="live-dot"></span> SAMPLE DATA</span><a class="button button-mint" href="auth.html">Open the workspace <span aria-hidden="true">→</span></a></div>
           <div class="dashboard" id="dashboard-preview" aria-label="Illustrative TRIPLEES dashboard mockup">
             <div class="dashboard-bar"><div class="dash-brand"><span class="brand-mark tiny" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span> TRIPLEES</div><span class="dash-demo">DEMO ENVIRONMENT</span><span class="avatar">JD</span></div>
-            <div class="dash-layout"><aside class="dash-sidebar"><span class="side-active">◫ &nbsp; Overview</span><span>▧ &nbsp; Projects</span><span>▤ &nbsp; Credit registry</span><span>⌕ &nbsp; Evidence review</span><span>⌁ &nbsp; Risk monitor</span><span>◎ &nbsp; Public explorer</span><div class="side-profile"><span class="avatar small-avatar">JD</span><span>Demo reviewer<small>Local prototype</small></span></div></aside>
+            <div class="dash-layout"><aside class="dash-sidebar"><span class="side-active">◫ &nbsp; Overview</span><span>▧ &nbsp; Projects</span><span>▤ &nbsp; Credit registry</span><span>⌕ &nbsp; Evidence review</span><span>⌁ &nbsp; Risk monitor</span><span>◎ &nbsp; Public explorer</span><div class="side-profile"><span class="avatar small-avatar">JD</span><span>Demo reviewer<small>Sample data</small></span></div></aside>
               <div class="dash-main"><div class="dash-title"><div><small>PROJECT OVERVIEW / DEMO DATA</small><h3>Good morning, Jordan</h3></div><button class="dash-filter" type="button" aria-label="Selected period: demo snapshot">Demo snapshot⌄</button></div>
                 <div class="stat-grid"><div class="stat-card"><small>ACTIVE PROJECTS</small><strong>01</strong><span>Illustrative data</span></div><div class="stat-card"><small>CREDITS REVIEWED</small><strong>—</strong><span>No live records</span></div><div class="stat-card risk-stat"><small>CREDITS AT RISK</small><strong>—</strong><span>Not connected</span></div><div class="stat-card"><small>MONITORED AREA</small><strong>—</strong><span>No live feed</span></div></div>
                 <div class="dash-content-grid"><article class="project-panel"><div class="panel-heading"><div><small>FEATURED DEMO PROJECT</small><h4>Amazon Forest Reserve</h4></div><span class="status-chip">SYNTHETIC</span></div><img src="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=900&q=80" alt="Dense green forest canopy in a demonstration project" loading="lazy"/><div class="project-meta"><span>Project reference<strong>DEMO-FOREST-001</strong></span><span>Evidence state<strong>Sample only</strong></span><span>Registry source<strong>Not connected</strong></span></div><div class="timeline"><span class="timeline-dot"></span><span><strong>Project created</strong><small>Sample event · no chain transaction</small></span><time>Demo</time></div></article>
-                  <article class="review-panel"><div class="panel-heading"><div><small>INTEGRITY WORKFLOW</small><h4>Evidence passport</h4></div><span class="passport-icon">⌁</span></div><div class="review-state"><span class="review-symbol">✓</span><span><strong>Ready for review</strong><small>Illustrative workflow state</small></span></div><div class="review-row"><span>Project evidence</span><b>Sample set</b></div><div class="review-row"><span>Registry conflicts</span><b>Not checked</b></div><div class="review-row"><span>Monitoring source</span><b>Not connected</b></div><div class="review-callout">Prototype preview. No credits have been certified or issued.</div></article></div>
+                  <article class="review-panel"><div class="panel-heading"><div><small>INTEGRITY WORKFLOW</small><h4>Evidence passport</h4></div><span class="passport-icon">⌁</span></div><div class="review-state"><span class="review-symbol">✓</span><span><strong>Ready for review</strong><small>Illustrative workflow state</small></span></div><div class="review-row"><span>Project evidence</span><b>Sample set</b></div><div class="review-row"><span>Registry conflicts</span><b>Not checked</b></div><div class="review-row"><span>Monitoring source</span><b>Not connected</b></div><div class="review-callout">Synthetic records · not certified credits.</div></article></div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="impact-section" id="impact">
-        <div class="impact-bg"></div><div class="container impact-content"><p class="eyebrow eyebrow-light">OUR IMPACT</p><h2>Turning data into a<br/>healthier planet.</h2><p>Together, we can build a more transparent and effective carbon market.</p><div class="impact-metrics"><div><span class="metric-symbol">◈</span><strong>—</strong><small>Projects tracked</small></div><div><span class="metric-symbol">⌁</span><strong>—</strong><small>Traceable credit batches</small></div><div><span class="metric-symbol">⌖</span><strong>—</strong><small>Hectares monitored</small></div><div><span class="metric-symbol">♧</span><strong>—</strong><small>Reviewers & partners</small></div></div><span class="metric-note">Live impact metrics will appear when connected data is available.</span></div>
-      </section>
-
-      <section class="section usecase-section">
-        <div class="container"><div class="section-heading"><p class="eyebrow">REAL-WORLD USE CASES</p><h2>Across sectors and stakeholders</h2><p>Bring relevant evidence into view for the people who need to act on it.</p></div>
-          <div class="usecase-grid">
-            <article class="usecase-card"><img src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=700&q=80" alt="Sunlit evergreen forest" loading="lazy"/><div><h3>Forestry & conservation</h3><p>Organize evidence for forest projects, restoration, and biodiversity initiatives.</p></div></article>
-            <article class="usecase-card"><img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=700&q=80" alt="Wind turbines generating renewable electricity" loading="lazy"/><div><h3>Renewable energy</h3><p>Connect clean energy activity with supporting project records.</p></div></article>
-            <article class="usecase-card"><img src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=700&q=80" alt="Modern city buildings viewed from below" loading="lazy"/><div><h3>Companies & ESG</h3><p>Support climate reporting with more inspectable source information.</p></div></article>
-            <article class="usecase-card"><img src="https://images.unsplash.com/photo-1511632765486-a01980e01a18?auto=format&fit=crop&w=700&q=80" alt="Community members working together outdoors" loading="lazy"/><div><h3>Communities</h3><p>Help local stakeholders access transparent project and benefit information.</p></div></article>
-            <article class="usecase-card"><img src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=700&q=80" alt="Earth seen from space" loading="lazy"/><div><h3>Researchers & policy</h3><p>Explore available evidence to inform environmental decisions.</p></div></article>
-          </div>
-          <p class="usecase-disclaimer">Use cases describe potential workflows; they do not imply certification or regulatory compliance.</p>
-        </div>
-      </section>
-
-      <section class="section section-soft technology-section">
-        <div class="container"><div class="section-heading"><p class="eyebrow">TECHNOLOGY & INTEGRATIONS</p><h2>Technology for a reviewable evidence trail</h2><p>Connected tools should make the evidence trail easier to inspect—not replace it.</p></div>
-          <div class="tech-grid"><article class="tech-card"><span class="tech-icon">⬡</span><h3>Blockchain</h3><p>Tamper-evident lifecycle records. A recorded event does not prove an off-chain claim.</p></article><article class="tech-card"><span class="tech-icon">⌖</span><h3>Satellite & IoT</h3><p>Environmental observations from supported and clearly identified data sources.</p></article><article class="tech-card"><span class="tech-icon">✳</span><h3>AI & analytics</h3><p>Structured evidence review and anomaly flagging, with human oversight.</p></article><article class="tech-card"><span class="tech-icon">⌘</span><h3>Open standards</h3><p>Adapters and exports designed for interoperability as integrations are configured.</p></article></div>
-        </div>
-      </section>
-
-      <section class="closing-section">
-        <div class="closing-photo"></div><div class="container closing-content"><p class="eyebrow eyebrow-light">JOIN THE MOVEMENT</p><h2>Be part of a more transparent, sustainable future.</h2><p>Whether you’re a project developer, business, researcher, or policymaker, TRIPLEES is being built to make climate evidence easier to follow.</p><div class="closing-actions"><a class="button button-mint" href="app.html#/dashboard">Get Started <span aria-hidden="true">→</span></a><a class="button button-glass" href="#dashboard-preview"><span class="play-icon" aria-hidden="true">▶</span> Watch Demo</a></div></div>
-      </section>
-
       <section class="section faq-section" id="resources">
-        <div class="container faq-grid"><div class="faq-intro"><p class="eyebrow">FREQUENTLY ASKED QUESTIONS</p><h2>Get the answers you need.</h2><p>Clear answers about what the TRIPLEES prototype does—and what it does not claim.</p><a class="text-link" href="#footer">More about TRIPLEES <span aria-hidden="true">→</span></a></div><div class="faq-list">
-          <details><summary>What is TRIPLEES?<span aria-hidden="true"></span></summary><p>TRIPLEES is a prototype integrity and provenance platform for organizing credit history, evidence review, available registry records, and monitoring signals.</p></details>
+        <div class="container faq-grid"><div class="faq-intro"><p class="eyebrow">FAQ</p><h2>Clear answers about the data.</h2><p>What the workspace checks, what it stores, and where its limits are.</p></div><div class="faq-list">
+          <details><summary>What is TRIPLEES?<span aria-hidden="true"></span></summary><p>TRIPLEES organizes project records, evidence review, available registry data, and monitoring signals in a traceable workspace.</p></details>
           <details><summary>How does TRIPLEES prevent double counting?<span aria-hidden="true"></span></summary><p>It can flag potential conflicts in records that have been imported or connected. Checks do not cover registries or datasets that are unavailable.</p></details>
           <details><summary>Is the data publicly available?<span aria-hidden="true"></span></summary><p>Public views can show non-sensitive project details and evidence references. Private documents and sensitive information should remain protected.</p></details>
-          <details><summary>Can I integrate my own data?<span aria-hidden="true"></span></summary><p>Integrations depend on configured connectors. This prototype preview does not imply that external data sources are currently connected.</p></details>
-          <details><summary>Is this a real carbon credit marketplace?<span aria-hidden="true"></span></summary><p>No. The initial MVP is not a production marketplace and does not certify credits or guarantee climate outcomes.</p></details>
+          <details><summary>Can I integrate my own data?<span aria-hidden="true"></span></summary><p>Data imports are available; external connectors depend on the integrations configured for a workspace.</p></details>
+          <details><summary>Does TRIPLEES certify credits?<span aria-hidden="true"></span></summary><p>No. The workspace supports review and traceability. It does not certify environmental outcomes or guarantee climate claims.</p></details>
         </div></div>
       </section>
 
-      <section class="final-cta">
-        <div class="earth-art" role="img" aria-label="Illustration of Earth viewed from space"></div><div class="final-cta-copy"><p class="eyebrow eyebrow-light">A CLEARER VIEW OF CLIMATE CLAIMS</p><h2>Ready to explore?</h2><p>Preview how traceability and evidence review can support more informed climate action.</p><a class="button button-mint" href="app.html#/dashboard">Open Demo <span aria-hidden="true">→</span></a></div>
-      </section>
     </main>
 
-    <footer class="site-footer" id="footer"><div class="container footer-main"><div class="footer-brand"><a class="brand footer-logo" href="#home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span><span>TRIPLEES</span></a><p>Evidence with context.<br/>Decisions with review.</p></div>
-        <div class="footer-links"><div><h3>Product</h3><a href="#features">Features</a><a href="#how-it-works">How it works</a><a href="#demo">Demo preview</a></div><div><h3>Company</h3><a href="#about">About TRIPLEES</a><a href="#impact">Our mission</a><a href="#resources">Contact & questions</a></div><div><h3>Resources</h3><a href="#resources">FAQs</a><a href="#how-it-works">Our approach</a><a href="#resources">Privacy & data</a></div></div>
-      </div><div class="container footer-bottom"><span>© <span id="current-year"></span> TRIPLEES. Prototype preview.</span><span>Investigate. Verify. Trace.</span><a href="#home">Back to top ↑</a></div></footer>
+    <footer class="site-footer" id="footer"><div class="container footer-main"><div class="footer-brand"><a class="brand footer-logo" href="#home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span><span>TRIPLEES</span></a><p>Evidence in context.<br/>Decisions with a source trail.</p></div>
+        <div class="footer-links"><div><h3>Explore</h3><a href="#features">Product</a><a href="#how-it-works">Workflow</a><a href="#demo">Workspace preview</a></div><div><h3>Account</h3><a href="auth.html">Open workspace</a><a href="#resources">Frequently asked questions</a></div></div>
+      </div><div class="container footer-bottom"><span>© <span id="current-year"></span> TRIPLEES</span><span>Synthetic demo records are not certified credits.</span><a href="#home">Back to top ↑</a></div></footer>
     <script src="assets/js/script.js"></script>
   </body>
 </html>

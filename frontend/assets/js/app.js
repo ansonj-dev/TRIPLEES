@@ -251,13 +251,17 @@ function renderShell() {
     chainBadge.title = network?.error || (connected ? `X1 Maculatus · block ${network.latest_block ?? '—'} · contract ${network.contract_deployed ? 'verified' : 'not configured'}` : 'X1 Maculatus RPC unavailable or not configured');
     chainBadge.innerHTML = `<i></i> ${connected ? (network.contract_deployed ? 'X1 LIVE' : 'X1 RPC') : 'X1 OFFLINE'}`;
   }
-  $('#side-impact').textContent = `${formatTonnes(db.credits.reduce((sum, c) => sum + c.retiredKg, 0))}`;
+  const sideImpact = $('#side-impact');
+  if (sideImpact) sideImpact.textContent = `${formatTonnes(db.credits.reduce((sum, c) => sum + c.retiredKg, 0))}`;
   if (db.settings?.displayName) {
     const name = db.settings.displayName;
     $('.account-button b').textContent = name;
-    $('.sidebar-user b').textContent = name;
     $('.account-button small').textContent = db.settings.role || 'Workspace member';
-    $('.sidebar-user small').textContent = db.settings.role || 'Workspace member';
+    const sidebarUser = $('.sidebar-user');
+    if (sidebarUser) {
+      sidebarUser.querySelector('b').textContent = name;
+      sidebarUser.querySelector('small').textContent = db.settings.role || 'Workspace member';
+    }
   }
   const openAlerts = db.alerts.filter((a) => a.state === 'Open').length;
   const count = $('#alert-count'); count.textContent = openAlerts; count.hidden = openAlerts === 0;

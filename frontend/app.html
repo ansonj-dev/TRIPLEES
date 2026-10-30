@@ -9,18 +9,19 @@
   <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="stylesheet" href="assets/css/workspace-ui.css?v=12" />
+  <link rel="stylesheet" href="assets/css/design-refresh.css?v=4" />
 </head>
 <body class="workspace-body">
   <a class="skip-link" href="#page-content">Skip to workspace content</a>
   <div id="app" class="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Application navigation">
       <div class="sidebar-head"><a class="app-brand" href="index.html"><span class="leaf-mark">◢</span><span>TRIPLEES</span></a><button class="collapse-btn" data-action="collapse" aria-label="Collapse sidebar" title="Collapse sidebar"><i data-lucide="panel-left-close" aria-hidden="true"></i></button></div>
-      <div class="workspace-pill"><span class="workspace-avatar">T</span><span><b>TRIPLEES workspace</b><small>Local prototype</small></span><span class="workspace-caret">⌄</span></div>
+      <div class="workspace-pill"><span class="workspace-avatar">T</span><span><b>TRIPLEES workspace</b><small>Evidence review</small></span><span class="workspace-caret">⌄</span></div>
       <nav class="side-nav" id="side-nav" aria-label="Workspace pages"></nav>
-      <div class="sidebar-bottom"><div class="impact-mini"><span class="impact-leaf">♧</span><div><small>DEMO IMPACT</small><strong id="side-impact">— tCO₂e</strong><span>Illustrative workspace</span></div></div><div class="sidebar-user"><span class="user-avatar">JD</span><span><b>Jordan Demo</b><small>Demo reviewer</small></span><button aria-label="Account options" class="user-more">···</button></div></div>
+      <div class="sidebar-bottom"><span class="sidebar-mode">DEMO WORKSPACE</span></div>
     </aside>
     <div class="sidebar-backdrop" data-action="close-sidebar"></div>
     <main class="workspace-main">
@@ -33,14 +34,14 @@
         <button class="top-icon" data-route="/alerts" aria-label="Open alerts" title="Alerts"><i data-lucide="bell" aria-hidden="true"></i><span class="alert-count" id="alert-count" hidden>0</span></button>
         <button class="account-button" data-action="account"><span class="user-avatar">JD</span><span><b>Jordan Demo</b><small>Individual · Demo</small></span><span>⌄</span></button>
       </header>
-      <div class="demo-notice"><b>DEMO DATA — NOT CERTIFIED CARBON CREDITS</b><span>Local prototype · X1 testnet contract connected · fictional QA records remain labeled DEMO</span><button data-action="dismiss-notice" aria-label="Dismiss demo notice">×</button></div>
+      <div class="demo-notice"><b>DEMO DATA</b><span>Synthetic records only; no credits are certified.</span><button data-action="dismiss-notice" aria-label="Dismiss demo notice">×</button></div>
       <section id="page-content" class="page-content" tabindex="-1"></section>
-      <footer class="workspace-footer"><span>TRIPLEES · Local prototype</span><span>Investigate. Verify. Trace.</span><a href="index.html">Landing page ↗</a></footer>
+      <footer class="workspace-footer"><span>TRIPLEES workspace</span><span>Investigate. Verify. Trace.</span><a href="index.html">Landing page ↗</a></footer>
     </main>
     <div id="modal-root"></div>
     <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
   </div>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script src="assets/js/app.js?v=report-anchoring-1"></script>
+  <script src="assets/js/app.js?v=workspace-design-1"></script>
 </body>
 </html>
