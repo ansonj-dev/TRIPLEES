@@ -36,7 +36,7 @@ The remaining legacy matches are retained intentionally. They fall into these gr
 | `services/contracts/contracts/VericarbRegistry.sol`, test/scripts/artifact paths/package metadata; API contract metadata and `docs/CONTRACTS.md`, `docs/BLOCKCHAIN_ARCHITECTURE.md`, `docs/PROJECT_EXPLAINED_A_TO_Z.md`, `docs/REPORT_ANCHORING.md` | `VericarbRegistry` | Deployed/source-level contract identifier. Changing it would break ABI/artifact and historic chain references. |
 | `services/api/app/main.py` | `VERICARB-BATCH-REF` | Historical hash domain marker. Changing it would change deterministic fallback hashes. |
 | `services/api/tests/test_storage.py`, `services/api/tests/test_api.py` | test secret variable, test DB path, static-file denylist | Compatibility and security test fixtures. |
-| `docs/PHASE_0_AUDIT_AND_ROADMAP.md`, `docs/TEST_REPORT.md` | historical product/deployment narrative | Dated records of the original codebase and prior test/deployment claims. Not current UI copy. |
+| `docs/PHASE_0_AUDIT_AND_ROADMAP.md` | historical product/deployment narrative | Dated record of the original codebase and initial implementation plan. Not current UI copy. |
 
 Generated `node_modules`, Hardhat artifacts/cache, pytest cache, `data/`, and bytecode were excluded from the source-text count because they are generated, dependencies, or runtime data. The old contract name is expected in generated artifacts too.
 

@@ -56,7 +56,7 @@ Checks run against the attached folder on 2026-10-30 UTC:
 | `npm test` from `services/contracts` | Could not run: `hardhat` is not installed in the current checkout (`node_modules` is absent/ignored). No dependency installation was attempted. |
 | Git worktree and remote refs | No local Git metadata; the read-only remote query returned no refs. |
 
-The tracked `docs/TEST_REPORT.md` describes older results (2 API tests and a passing Hardhat suite). It does not match this fresh baseline and should be refreshed after dependencies are installed and the contract suite is rerun.
+The initial short test report was later superseded by `TRIPLEES_TEST_REPORT.md`, which records the expanded local test run and its limits. The test counts in this Phase 0 audit are historical, not current results.
 
 ## Documentation inconsistencies found
 

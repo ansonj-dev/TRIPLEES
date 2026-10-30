@@ -347,7 +347,7 @@ Transaction count alone is not climate impact. A credible impact claim needs evi
 - [Registry contract](../services/contracts/contracts/VericarbRegistry.sol): permissions, balances, and state transitions.
 - [Frontend](../frontend/assets/js/app.js): workspace flows, previews, and browser integration.
 - [Blockchain architecture](BLOCKCHAIN_ARCHITECTURE.md), [network setup](X1_TESTNET_SETUP.md), and [deployment runbook](DEPLOYMENT_AND_VERIFICATION.md): integration design and recorded testnet activity.
-- [Recorded test report](TEST_REPORT.md): prior validation results and unresolved dependency findings.
+- [Current local test report](TRIPLEES_TEST_REPORT.md): verified commands, results, limitations, and unresolved checks.
 - [Official X1 website](https://x1ecochain.com/) and [developer portal](https://dev.x1ecochain.com/): vendor-published network descriptions, consulted for this guide.
 
 ## Final Assessment

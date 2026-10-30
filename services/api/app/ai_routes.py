@@ -7,14 +7,14 @@ from sqlalchemy.orm import Session
 from .db import get_db
 from .models import ModelUsage, Profile
 from .security import current_user
-from .services.ai.nebius_client import NebiusClient
+from .services.ai.factory import create_ai_provider
 
 router = APIRouter()
 
 
 @router.get("/api/ai/health")
 def ai_health(_user: Profile = Depends(current_user)):
-    return NebiusClient().health_status()
+    return create_ai_provider().health_status()
 
 
 @router.get("/api/ai/usage")

@@ -4,8 +4,10 @@ import httpx
 import pytest
 
 from services.api.app.services.ai.model_registry import describe_model, require_nemotron_model
+from services.api.app.services.ai.factory import create_ai_provider
+from services.api.app.services.ai.local_mock import LocalMockProvider
 from services.api.app.services.ai.nebius_client import NebiusClient
-from services.api.app.services.ai.provider import AIProviderError
+from services.api.app.services.ai.provider import AIProviderError, UnavailableAIProvider
 from services.api.app.services.ai.structured_output import AgentOutput, parse_structured_output
 from services.api.app.services.ai.usage_tracker import usage_cost
 
@@ -15,6 +17,39 @@ def test_model_registry_marks_only_configured_nemotron_as_nemotron():
     assert describe_model("some-provider/other-model").family == "unverified"
     with pytest.raises(ValueError):
         require_nemotron_model("some-provider/other-model")
+
+
+def test_provider_factory_preserves_token_factory_default(monkeypatch):
+    from services.api.app import config
+
+    monkeypatch.setattr(config, "AI_PROVIDER", "nebius_token_factory")
+    assert isinstance(create_ai_provider(), NebiusClient)
+
+
+def test_provider_factory_selects_mock_only_when_explicit(monkeypatch):
+    from services.api.app import config
+
+    monkeypatch.setattr(config, "AI_PROVIDER", "local_mock")
+    provider = create_ai_provider()
+    assert isinstance(provider, LocalMockProvider)
+    assert provider.health_status()["real_inference"] is False
+    result = provider.generate([{"role": "user", "content": "test"}], json_mode=True)
+    assert result.provider == "local_mock"
+    assert result.model == "local-mock-v1"
+    assert "not Nemotron inference" in result.content
+    parsed = parse_structured_output(result.content, AgentOutput)
+    assert parsed.summary == "Local mock response; no external model inference was performed."
+
+
+def test_unverified_ai_cloud_provider_fails_closed(monkeypatch):
+    from services.api.app import config
+
+    monkeypatch.setattr(config, "AI_PROVIDER", "nebius_ai_cloud")
+    provider = create_ai_provider()
+    assert isinstance(provider, UnavailableAIProvider)
+    assert provider.health_status()["state"] == "unverified_endpoint"
+    with pytest.raises(AIProviderError, match="verify a deployed endpoint"):
+        provider.generate([{"role": "user", "content": "test"}])
 
 
 def test_structured_output_is_parsed_and_validated():

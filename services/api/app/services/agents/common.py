@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlsplit
 
-from ..ai.nebius_client import NebiusClient
+from ..ai.factory import create_ai_provider
 from ..ai.provider import AIProvider, AIProviderError, ChatResult, ProviderNotConfigured
 from ..ai.structured_output import AgentOutput, FindingOutput, parse_structured_output
 
@@ -118,7 +118,7 @@ class ScopedAgent:
     system_prompt = ""
 
     def __init__(self, provider: AIProvider | None = None):
-        self.provider = provider or NebiusClient()
+        self.provider = provider or create_ai_provider()
 
     def run_model(self, context: AgentContext, *, user_instruction: str) -> AgentExecutionResult:
         if context.ai_budget_exhausted:

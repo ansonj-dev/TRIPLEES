@@ -1,22 +1,83 @@
-# TRIPLEES
+# TRIPLEES | Evidence Intelligence for Carbon Markets
 
 **Investigate. Verify. Trace.**
 
-TRIPLEES is a local prototype for evidence-grounded carbon project investigation. It combines a vanilla JavaScript frontend, FastAPI, SQLite or PostgreSQL persistence, document extraction, five specialized agents, a database-backed worker, and a Solidity registry integration for X1 EcoChain.
+TRIPLEES is an evidence-first workspace for investigating carbon projects and making their supporting records easier to examine. It brings documents, registry imports, monitoring observations, structured analysis, reviewer decisions, and tamper-evident report commitments into one auditable workflow.
 
-**Status:** local prototype with synthetic demo data and a recorded testnet deployment. It is not a production credit registry, certification service, or live marketplace. An on-chain record proves that identifiers and hashes were recorded, not that the underlying environmental claim is true.
+The aim is practical: help teams move from scattered project records to clear, source-linked findings, while keeping uncertainty visible and human judgment in control. TRIPLEES treats AI as an analytical assistant, not an authority; deterministic checks and reviewer decisions remain distinct from model-generated suggestions.
 
-## Features
+**Project status:** research and demonstration prototype with synthetic demo data and a recorded X1 EcoChain testnet deployment. It is not a production credit registry, certification service, or live marketplace. A blockchain record can show that an identifier or hash was recorded; it cannot establish that an environmental claim is true.
 
-- Project and evidence management with SHA-256 evidence hashing.
-- Local text extraction for PDF, CSV, JSON, and TXT evidence, with source locations, chunks, and heuristic claim candidates.
-- Scoped evidence, research, registry-integrity, monitoring, and independent-review agent modules with explicit limitations and citations.
-- An intelligence workspace for persistent investigations, agent activity, source-linked findings, versioned reports, and reviewer decisions.
-- An optional, separately approved X1 flow for reviewer-approved report SHA-256 commitments. Report contents remain off-chain.
-- Registry imports and conflict checks against imported records.
-- Imported or synthetic monitoring signals, deterministic integrity assessments, and human review workflows. No live satellite, IoT, or field monitoring feed is connected by default.
-- Batch issuance, local transfer and retirement workflows, and public verification.
-- X1 testnet network status, project registration, evidence anchoring, and batch issuance.
+[Product tour](#product-tour) · [Workflow](#workflow-at-a-glance) · [Getting started](#getting-started) · [Technology](#technology) · [Documentation](#documentation)
+
+## What TRIPLEES Does
+
+TRIPLEES organizes the investigation lifecycle around traceable inputs and reviewable outputs:
+
+1. **Collect and fingerprint evidence.** Manage project records, extract supported document text, retain source locations, and calculate SHA-256 digests for stored evidence.
+2. **Analyze within defined roles.** Five bounded agents cover evidence, public research, registry integrity, monitoring, and independent review. Each works from caller-provided context and reports its sources and limitations.
+3. **Build a review trail.** Persist investigations, agent activity, findings, report versions, and reviewer decisions so that conclusions can be examined against their inputs.
+4. **Anchor approved records.** Where explicitly configured and approved, record project or evidence identifiers on X1 EcoChain and commit reviewer-approved report digests. Evidence files and report contents remain off-chain.
+
+The result is an investigation workflow designed for explainability: distinguish imported facts from synthetic examples, deterministic checks from AI suggestions, and a recorded hash from proof of an environmental outcome.
+
+## Capabilities
+
+- Project and evidence management with SHA-256 evidence hashing and authenticated evidence access.
+- Opt-in text extraction for PDF, CSV, JSON, and TXT, including source locations, chunks, and heuristic claim candidates.
+- Five scoped agent roles for evidence analysis, public research, registry integrity, monitoring, and independent review.
+- Persistent investigations, agent execution history, source-linked findings, versioned reports, and reviewer decisions.
+- An optional, separately approved X1 workflow for reviewer-approved report SHA-256 commitments; report contents remain off-chain.
+- Registry imports with conflict checks limited to the records provided.
+- Imported or synthetic monitoring signals and deterministic assessments. No live satellite, IoT, or field-monitoring feed is connected by default.
+- Local batch issuance, transfer, retirement, and public verification workflows, with selected project, evidence, and issuance operations available on X1 testnet.
+
+## Product Tour
+
+These five screens were captured from the running local demo on October 30, 2026. The records shown are synthetic examples, not live project data or certified credits. The workspace clearly labels its demo state, disconnected external services, and review limitations. No external AI inference or blockchain transaction was used to create these screenshots.
+
+### 1. Public entry point
+
+The landing page introduces the product's central idea: follow a carbon-market claim back to its records. From here, a reviewer can enter the workspace and explore the product workflow.
+
+![TRIPLEES public landing page with the evidence-first product overview](docs/screenshots/01-public-homepage.png)
+
+### 2. Portfolio overview
+
+The dashboard brings project count, demo credit balances, open review work, monitoring alerts, and recent activity into one place. The sample at-risk and review items are navigation cues for the underlying records, not automated verdicts.
+
+![TRIPLEES workspace overview showing synthetic portfolio and review status](docs/screenshots/02-workspace-overview.png)
+
+### 3. Evidence library and fingerprints
+
+Evidence is stored off-chain. The API computes a SHA-256 digest for each file so a later copy can be checked for byte-for-byte integrity. A digest is a fingerprint, not proof that a document is authentic or that its claims are true. Text extraction is an explicit action and can preserve locations such as page, row, or field references.
+
+![TRIPLEES evidence library with a synthetic source file and its SHA-256 fingerprint](docs/screenshots/03-evidence-library.png)
+
+### 4. Registry record comparison
+
+The example import contains the same serial in two supplied records. TRIPLEES flags the exact match and shows both source rows for a reviewer to inspect. This check covers only the records imported into this workspace; it does not query or certify against every external registry.
+
+![TRIPLEES registry comparison highlighting a duplicate serial in imported demo rows](docs/screenshots/04-registry-conflicts.png)
+
+### 5. Monitoring signals for review
+
+The monitoring view shows the source and review state alongside a synthetic forest-loss signal. It is deliberately labeled as demo data: there is no live satellite, IoT, or field feed, and an alert is a prompt for investigation rather than confirmation of environmental damage or reversal.
+
+![TRIPLEES monitoring view showing a synthetic observation awaiting human review](docs/screenshots/05-monitoring-review.png)
+
+## Workflow at a Glance
+
+TRIPLEES keeps source material, analysis, and decisions distinct so a reviewer can trace how a report was produced:
+
+1. **Create a project and attach records.** Project details, uploaded documents, imported registry rows, and monitoring observations are stored as separate records. Evidence files stay off-chain in configured local or object storage.
+2. **Fingerprint and extract evidence.** The API computes a SHA-256 digest when a file is stored. A user may explicitly request extraction for supported PDF, CSV, JSON, or text files; extracted passages retain source locations and candidate claims are not treated as verified facts.
+3. **Run bounded checks.** Registry comparison checks imported rows for exact serial conflicts. Monitoring assessments evaluate supplied observations. These are scoped checks over available input, not global registry searches or live environmental monitoring.
+4. **Investigate with scoped agents.** An investigation is queued for the database-backed worker. Evidence, research, integrity, monitoring, and independent-review roles receive bounded context and record their activity, sources, limitations, and structured outputs. Public research and external model inference are unavailable unless their providers are separately configured; sending selected evidence to Nebius requires explicit per-investigation authorization.
+5. **Review and preserve a report.** Findings remain advisory until an authorized human reviews them. A reviewer records a reasoned decision, and report versions preserve what was reviewed at that point in time.
+6. **Optionally anchor an approved digest.** A reviewer-approved report digest can be committed to X1 testnet only through a separately configured and explicitly approved operation. The report and evidence contents remain off-chain; a transaction proves a hash was recorded, not that the report is correct.
+
+The five agent roles do not have arbitrary tools or authority to approve credits, sign transactions, or make environmental determinations. AI output is an aid to review, not a substitute for source inspection or human judgment.
 
 ## Repository Structure
 
@@ -104,11 +165,19 @@ Select **Explore the demo workspace** on the sign-in page to load synthetic reco
 
 The example configuration targets X1 EcoChain Maculatus Testnet (chain ID `10778`) but contains no private keys or registry address. Configure those values in your ignored local `.env` to enable chain actions. Never commit credentials, wallet keys, local databases, or uploaded evidence. Set `VERICARB_TOKEN_SECRET` to a long random value before sharing a running instance.
 
-### Nebius AI foundation
+### Nebius and NVIDIA AI
 
-The API includes an OpenAI-compatible Nebius Token Factory client for a configurable NVIDIA Nemotron model. Set `NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, and `NEBIUS_MODEL` in your ignored local `.env` to enable inference in investigation workflows. The default model identifier is configurable and can be changed to a Nemotron model available to your account. `/api/ai/health` reports configuration without sending a model request; `/api/ai/usage` reports persisted token and latency data. Cost remains marked unknown unless both current per-million-token rates are explicitly configured. No real inference call is made by startup or health checks. A real inference call sends consented prompt content to Nebius and may incur account charges.
+AI is an optional analysis capability in TRIPLEES, not an automatic verdict engine. The current integration connects the API to **Nebius Token Factory** using its OpenAI-compatible chat-completions interface and a configurable **NVIDIA Nemotron** model. The default model identifier is a configuration choice; it does not guarantee that the model is available to a particular account or region.
 
-The provider rejects non-Nemotron model identifiers so the application does not label an unrelated model as Nemotron. Provider errors are sanitized, request retries are bounded, and structured model output must pass Pydantic validation before later code can use it. Never send API keys or private uploaded evidence in logs or source control.
+**How it works today:** when a user explicitly authorizes external AI for an investigation, the Evidence Analyst and Independent Review Agent can send their selected, bounded context to the configured provider. Nemotron output is parsed into structured data, checked against the authorized evidence and source context, and retained as advisory analysis with citations and limitations. Human review remains in control. Without per-run authorization, the agents use their local behavior and do not send project evidence to the model.
+
+Configure `NEBIUS_API_KEY`, `NEBIUS_BASE_URL`, and `NEBIUS_MODEL` in an ignored local `.env` to enable Token Factory inference. `/api/ai/health` reports configuration without sending a model request; `/api/ai/usage` reports persisted token and latency data. The client uses bounded timeouts and retries, sanitizes provider errors, and rejects model identifiers that are not identified as NVIDIA Nemotron. Cost remains unknown unless both current per-million-token rates are explicitly configured. Real inference sends the authorized prompt content to Nebius and may incur charges.
+
+`AI_PROVIDER` defaults to `nebius_token_factory` to preserve the existing integration. `local_mock` is available only when selected explicitly and returns deterministic local output; it is not evidence of a working model connection. `nebius_ai_cloud` currently fails closed because an AI Cloud endpoint protocol and model have not been verified. It does not silently fall back to Token Factory or mock output.
+
+**How it can grow:** Nebius AI Cloud Serverless Endpoints or a supported NVIDIA NIM deployment could provide a future hosting path if the selected service, Nemotron model, region, endpoint protocol, and billing terms are verified for the account. These are not interchangeable with Token Factory by assumption: the current AI Cloud provider intentionally fails closed until its endpoint and API contract are verified. No AI Cloud endpoint, NIM deployment, GPU workload, or other Nebius cloud resource is currently created by this project. Any such deployment or billable inference requires explicit human approval after reviewing cost, runtime, idle billing, and shutdown steps.
+
+Never put API keys in source control or logs. Do not use private uploaded evidence with external AI unless the investigation explicitly authorizes sending the selected content.
 
 ## Sample Data
 
@@ -193,20 +262,34 @@ API workflow tests use a temporary SQLite database and evidence directory. Stati
 
 ## Documentation
 
-| Guide | Contents |
-| --- | --- |
-| [Project explained](docs/PROJECT_EXPLAINED_A_TO_Z.md) | Product context, architecture, trust boundaries, and roadmap |
-| [Demo walkthrough](docs/DEMO_WALKTHROUGH.md) | Demonstration flow and expected behavior |
-| [Blockchain architecture](docs/BLOCKCHAIN_ARCHITECTURE.md) | Off-chain and on-chain responsibilities |
-| [Contract reference](docs/CONTRACTS.md) | Registry roles, operations, and lifecycle |
-| [X1 setup](docs/X1_TESTNET_SETUP.md) | Network configuration and operational prerequisites |
-| [Deployment and verification](docs/DEPLOYMENT_AND_VERIFICATION.md) | Recorded deployment and explicit testnet operations |
-| [Test report](docs/TEST_REPORT.md) | Recorded verification results and known dependency findings |
-| [Investigation worker](docs/INVESTIGATION_WORKER.md) | Persistent job lifecycle, worker startup, API routes, retries, and recovery |
-| [Findings and reports](docs/FINDINGS_AND_REPORTS.md) | Citation handling, report versions, reviewer permissions, and review decisions |
-| [Intelligence workspace](docs/INTELLIGENCE_WORKSPACE.md) | Frontend screens, API behavior, and reviewer access |
-| [Report anchoring](docs/REPORT_ANCHORING.md) | Canonical digest format, reviewer approval, local verification, and separately approved deployment instructions |
-| [Production operations](docs/PRODUCTION_OPERATIONS.md) | PostgreSQL, S3-compatible evidence storage, worker operation, security limits, backups, and production readiness gate |
+The README is the product tour and local demo guide. The focused references below preserve implementation detail, operating constraints, and dated verification history.
+
+| Area | Guide | Use it for |
+| --- | --- | --- |
+| Product | [Project explained](docs/PROJECT_EXPLAINED_A_TO_Z.md) | Product context, architecture, trust boundaries, and roadmap |
+| Product | [Demo walkthrough](docs/DEMO_WALKTHROUGH.md) | Demonstration flow and expected behavior |
+| Product | [Intelligence workspace](docs/INTELLIGENCE_WORKSPACE.md) | Frontend screens, API behavior, and reviewer access |
+| Evidence | [Evidence intelligence](docs/EVIDENCE_INTELLIGENCE.md) | Extraction formats, source locations, and claim-candidate limits |
+| Investigations | [Agent design](docs/AGENT_DESIGN.md) | Agent responsibilities, context boundaries, and output contracts |
+| Investigations | [Investigation worker](docs/INVESTIGATION_WORKER.md) | Persistent job lifecycle, startup, retries, cancellation, and recovery |
+| Investigations | [Findings and reports](docs/FINDINGS_AND_REPORTS.md) | Citations, report versions, reviewer permissions, and decisions |
+| AI | [AI foundation](docs/AI_FOUNDATION.md) | AI principles, provider boundaries, and safety posture |
+| AI | [Provider architecture](docs/TRIPLEES_AI_PROVIDER_ARCHITECTURE.md) | Provider selection, local mock behavior, and fail-closed AI Cloud boundary |
+| AI | [Nebius AI Cloud integration](docs/NEBIUS_AI_CLOUD_INTEGRATION.md) | Verified integration facts, unknowns, and approval gates |
+| AI | [Nebius MCP audit](docs/NEBIUS_MCP_AUDIT.md) | Workspace MCP configuration and recorded startup findings |
+| AI | [Nebius setup guide](docs/NEBIUS_SETUP_GUIDE.md) | Safe local setup and read-only account inspection prerequisites |
+| Blockchain | [Blockchain architecture](docs/BLOCKCHAIN_ARCHITECTURE.md) | On-chain versus off-chain responsibilities |
+| Blockchain | [Contract reference](docs/CONTRACTS.md) | Registry roles, operations, and lifecycle |
+| Blockchain | [X1 setup](docs/X1_TESTNET_SETUP.md) | Network configuration and operational prerequisites |
+| Blockchain | [Deployment and verification](docs/DEPLOYMENT_AND_VERIFICATION.md) | Recorded deployment and explicit testnet operations |
+| Blockchain | [Report anchoring](docs/REPORT_ANCHORING.md) | Digest format, reviewer approval, and optional anchoring workflow |
+| Operations | [Production operations](docs/PRODUCTION_OPERATIONS.md) | Database/storage, security limits, backups, and production readiness gate |
+| Operations | [Implementation checklist](docs/IMPLEMENTATION_CHECKLIST.md) | Delivery checklist and outstanding engineering work |
+| Status | [Current-state audit](docs/TRIPLEES_CURRENT_STATE_AUDIT.md) | Verified components, limits, and audit findings |
+| Status | [Requirements traceability](docs/TRIPLEES_REQUIREMENTS_TRACEABILITY.md) | Requirement-by-requirement implementation and test mapping |
+| Status | [Implementation roadmap](docs/TRIPLEES_IMPLEMENTATION_ROADMAP.md) | Remaining work and priority sequence |
+| Status | [Local test report](docs/TRIPLEES_TEST_REPORT.md) | Current recorded commands, results, and test gaps |
+| History | [Phase 0 audit](docs/PHASE_0_AUDIT_AND_ROADMAP.md) | Initial repository baseline and historical implementation plan |
 
 ## Security and Limitations
 

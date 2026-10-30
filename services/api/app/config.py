@@ -46,6 +46,7 @@ if APP_ENV == "production":
         raise RuntimeError("Production requires AUTO_MIGRATE=false; run Alembic as a controlled release step.")
     if SEED_DEMO_DATA:
         raise RuntimeError("Production requires SEED_DEMO_DATA=false.")
+AI_PROVIDER = os.getenv("AI_PROVIDER", "nebius_token_factory").strip().lower()
 NEBIUS_API_KEY = os.getenv("NEBIUS_API_KEY", "").strip()
 NEBIUS_BASE_URL = os.getenv("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1").rstrip("/")
 NEBIUS_MODEL = os.getenv("NEBIUS_MODEL", "nvidia/nemotron-3-super-120b-a12b").strip()
