@@ -1049,3 +1049,50 @@ def test_worker_enforces_external_service_permission_when_investigation_consent_
         with app_db.SessionLocal() as db:
             execution = db.get(AgentExecution, finished_task["result_reference"])
             assert execution.error_code == "external_service_not_permitted"
+
+
+def test_near_mismatched_transaction_hash_can_be_replaced(isolated_backend, monkeypatch):
+    from services.api.app import near_routes
+    from services.api.app.models import NearCommitment
+    from services.api.app.services.near_chain import NearTransactionMismatch
+
+    _enable_near_testnet(monkeypatch)
+
+    class FakeNearChain:
+        def verify_report_transaction(self, transaction_hash, _account_id, _contract_id, _expected):
+            if transaction_hash == "1" * 44:
+                raise NearTransactionMismatch("The transaction signer or call does not match the approved commitment.")
+            return "confirmed"
+
+    monkeypatch.setattr(near_routes, "NearChainClient", FakeNearChain)
+    with TestClient(app) as client:
+        headers, _investigation, report = _create_near_report(client)
+        prepared = client.post("/api/near/commitments/prepare", headers=headers, json={
+            "report_id": report.id, "near_account_id": "reviewer.testnet",
+            "reason": "The final report was checked before submission.",
+        })
+        assert prepared.status_code == 201
+        commitment_id = prepared.json()["id"]
+
+        rejected = client.post(
+            f"/api/near/commitments/{commitment_id}/confirm", headers=headers,
+            json={"transaction_hash": "1" * 44},
+        )
+        assert rejected.status_code == 422
+        with app_db.SessionLocal() as db:
+            row = db.get(NearCommitment, commitment_id)
+            assert row.status == "pending"
+            assert row.transaction_hash is None
+            assert row.failure_summary
+            assert db.query(AgentAuditEvent).filter_by(
+                investigation_id=row.investigation_id,
+                event_type="near_report_commitment_transaction_rejected",
+            ).count() == 1
+
+        retried = client.post(
+            f"/api/near/commitments/{commitment_id}/confirm", headers=headers,
+            json={"transaction_hash": "2" * 44},
+        )
+        assert retried.status_code == 200
+        assert retried.json()["status"] == "confirmed"
+        assert retried.json()["transaction_hash"] == "2" * 44
