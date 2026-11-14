@@ -134,6 +134,7 @@ def run_investigation(investigation_id: str, response: Response, db: Session = D
     row.status = "queued"
     row.cancel_requested = False
     row.requested_agent_keys_json = None
+    row.requested_agent_task_id = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
@@ -151,6 +152,7 @@ def cancel_investigation(investigation_id: str, db: Session = Depends(get_db), u
     if row.status in {"queued", "retry_wait", "draft"}:
         row.status = "cancelled"
         row.cancel_requested = True
+        row.requested_agent_task_id = None
         row.completed_at = utcnow()
         for task in db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id, AgentTask.status.in_(["assigned", "running"]))):
             task.status = "cancelled"
@@ -178,6 +180,7 @@ def retry_investigation(investigation_id: str, body: InvestigationRetry, db: Ses
     row.status = "queued"
     row.cancel_requested = False
     row.requested_agent_keys_json = None
+    row.requested_agent_task_id = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
