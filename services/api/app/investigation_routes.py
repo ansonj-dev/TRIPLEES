@@ -206,7 +206,7 @@ def investigation_agents(investigation_id: str, db: Session = Depends(get_db), u
         if execution.agent_key not in latest or execution.attempt_number > latest[execution.agent_key].attempt_number:
             latest[execution.agent_key] = execution
     return {"investigation_id": row.id, "status": row.status, "items": [{
-        "agent_key": key, "execution_id": item.id, "attempt_number": item.attempt_number,
+        "agent_key": key, "execution_id": item.id, "task_id": item.task_id, "attempt_number": item.attempt_number,
         "status": item.status, "task_summary": item.task_summary, "error_code": item.error_code,
         "started_at": item.started_at.isoformat() if item.started_at else None,
         "completed_at": item.completed_at.isoformat() if item.completed_at else None,
