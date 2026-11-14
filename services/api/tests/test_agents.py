@@ -101,7 +101,7 @@ def test_monitoring_agent_labels_synthetic_signals_and_does_not_claim_live_data(
 
 
 def test_research_agent_marks_unavailable_research_and_rejects_unsafe_urls():
-    context = AgentContext(project={"name": "Forest"}, public_research_authorized=True, source_references=[
+    context = AgentContext(project={"name": "Forest"}, public_research_authorized=True, external_service_allowed=True, source_references=[
         {"id": "SRC-1", "title": "Supplied source", "url": "https://registry.example.org/project"},
         {"id": "SRC-2", "title": "Private service", "url": "https://127.0.0.1/admin"},
     ])
@@ -125,7 +125,7 @@ def test_research_agent_records_real_retrieval_time_and_filters_non_public_resul
                 {"title": "Local admin", "publisher": "Internal", "url": "https://localhost/admin"},
             ]
 
-    result = ResearchInvestigator(Provider()).run(AgentContext(project={"name": "Forest"}, public_research_authorized=True))
+    result = ResearchInvestigator(Provider()).run(AgentContext(project={"name": "Forest"}, public_research_authorized=True, external_service_allowed=True))
     assert result.status == "completed"
     assert len(result.output.sources) == 1
     assert result.output.sources[0].domain == "registry.example.org"
