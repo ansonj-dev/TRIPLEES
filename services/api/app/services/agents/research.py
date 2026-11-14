@@ -42,6 +42,12 @@ class ResearchInvestigator:
                 AgentOutput(summary="External public-source research was not performed.", limitations=["Public web research was not authorized for this run."]),
                 "public_research_not_authorized",
             )
+        if not context.external_service_allowed:
+            return AgentExecutionResult(
+                self.agent_key, "completed_with_limitations", self.task_summary,
+                AgentOutput(summary="External public-source research was not performed.", limitations=["External service access is disabled for this agent by reviewer policy."]),
+                "external_service_not_permitted",
+            )
         if self.provider.provider_name == "unconfigured":
             supplied = [row for row in context.source_references if row.get("url") and row.get("title") and self._safe_public_url(str(row.get("url")))]
             output = AgentOutput(
