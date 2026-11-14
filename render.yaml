@@ -1,0 +1,94 @@
+services:
+  - type: web
+    name: triplees-web
+    runtime: python
+    plan: starter
+    region: singapore
+    branch: main
+    buildCommand: pip install -r services/api/requirements.txt
+    startCommand: python -m uvicorn services.api.app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: triplees-evidence
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: APP_ENV
+        value: development
+      - key: DATABASE_URL
+        fromDatabase:
+          name: triplees-db
+          property: connectionString
+      - key: VERICARB_DATA_DIR
+        value: /var/data
+      - key: VERICARB_TOKEN_SECRET
+        generateValue: true
+      - key: AUTO_MIGRATE
+        value: "true"
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: NEAR_NETWORK
+        value: testnet
+      - key: NEAR_ENABLED
+        value: "true"
+      - key: NEAR_REPORT_COMMITMENTS_ENABLED
+        value: "false"
+      - key: X1_TESTNET_RPC_URL
+        value: https://maculatus-rpc.x1eco.com
+      - key: X1_TESTNET_CHAIN_ID
+        value: "10778"
+      - key: X1_TESTNET_EXPLORER_URL
+        value: https://maculatus-scan.x1eco.com
+      - key: X1_TESTNET_NATIVE_CURRENCY
+        value: X1T
+      - key: AI_PROVIDER
+        value: nebius_token_factory
+      - key: NEBIUS_MODEL
+        value: nvidia/nemotron-3-super-120b-a12b
+      - key: AI_DAILY_TOKEN_LIMIT
+        value: "100000"
+  - type: worker
+    name: triplees-worker
+    runtime: python
+    plan: starter
+    region: singapore
+    branch: main
+    buildCommand: pip install -r services/api/requirements.txt
+    startCommand: python -m services.api.worker --poll-seconds 2
+    envVars:
+      - key: APP_ENV
+        value: development
+      - key: DATABASE_URL
+        fromDatabase:
+          name: triplees-db
+          property: connectionString
+      - key: VERICARB_DATA_DIR
+        value: /var/data
+      - key: VERICARB_TOKEN_SECRET
+        fromService:
+          type: web
+          name: triplees-web
+          envVarKey: VERICARB_TOKEN_SECRET
+      - key: AUTO_MIGRATE
+        value: "false"
+      - key: SEED_DEMO_DATA
+        value: "false"
+      - key: AI_PROVIDER
+        value: nebius_token_factory
+      - key: NEBIUS_MODEL
+        value: nvidia/nemotron-3-super-120b-a12b
+      - key: AI_DAILY_TOKEN_LIMIT
+        value: "100000"
+      - key: NEAR_NETWORK
+        value: testnet
+      - key: NEAR_ENABLED
+        value: "true"
+      - key: NEAR_REPORT_COMMITMENTS_ENABLED
+        value: "false"
+databases:
+  - name: triplees-db
+    databaseName: triplees
+    user: triplees
+    plan: basic-256mb
+    region: singapore
+    postgresMajorVersion: "16"
