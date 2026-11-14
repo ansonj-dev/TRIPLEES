@@ -102,7 +102,7 @@ NEAR_NETWORK=testnet
 NEAR_REPORT_REGISTRY_CONTRACT_ID=your-registry.testnet
 ```
 
-No NEAR contract, reviewer grant, wallet signature, or testnet transaction has been performed for this checkout. The local sandbox compatibility failure described in [the change log](docs/HACKATHON_CHANGES.md) must be resolved before deployment.
+No NEAR contract, reviewer grant, wallet signature, or testnet transaction has been performed for this checkout. The local host and sandbox tests now pass with the pinned SDK and Rust toolchain; deployment still requires a user-controlled testnet account, reviewer setup, and explicit approval.
 
 ### Demonstration
 
@@ -249,6 +249,8 @@ npm --prefix services/contracts run compile
 
 The current local results are recorded in [the test report](docs/TRIPLEES_TEST_REPORT.md). The [current-state audit](docs/TRIPLEES_CURRENT_STATE_AUDIT.md), [requirements traceability](docs/TRIPLEES_REQUIREMENTS_TRACEABILITY.md), and [implementation roadmap](docs/TRIPLEES_IMPLEMENTATION_ROADMAP.md) describe verified coverage and remaining work.
 
+The independent [final build audit](docs/TRIPLEES_FINAL_BUILD_AUDIT.md) records tested feature coverage, public-chain evidence, unresolved coordination/security findings, and the limits of the NEAR demonstration.
+
 Completed investigations persist structured findings, source references, limitations, report versions, and reviewer decisions. See the [findings and reports guide](docs/FINDINGS_AND_REPORTS.md) for review roles and API routes.
 
 The authenticated app also includes an intelligence dashboard, investigation center, agent activity view, risk filters, report reader, and reviewer queue. See the [intelligence workspace guide](docs/INTELLIGENCE_WORKSPACE.md) for screen behavior and role access.
@@ -276,7 +278,7 @@ npm ci
 npm run test:sandbox
 ```
 
-The host suite passes 8 tests and `cargo near build` succeeds. The near-workspaces sandbox test is included but currently fails with `PrepareError::Deserialization` for both cargo-near and plain cargo Wasm output. Do not deploy until this runtime compatibility issue is resolved and the sandbox test passes. No NEAR deployment or transaction has been performed for this checkout.
+The host suite passes 8 tests and the near-workspaces sandbox integration test passes against the optimized `cargo-near` artifact. The package pins near-sdk 5.17.2, Rust 1.86.0, and compatible transitive dependencies for the bundled protocol-77 sandbox. Use cargo-near's optimized output rather than raw `cargo build` Wasm. No NEAR deployment or transaction has been performed for this checkout.
 
 ## X1 Testnet
 
@@ -313,7 +315,7 @@ npm --prefix services\contracts test
 
 API workflow tests use a temporary SQLite database and evidence directory. Static-hosting tests check the public pages and assets and confirm that private repository paths return 404. Contract tests run locally; ordinary tests do not broadcast testnet transactions.
 
-Current regression results for this extension: `python -m pytest services/api/tests -q` passes 36 tests; NEAR host contract tests pass 8; the existing X1 Hardhat suite passes 7; and the NEAR Wasm build succeeds. The near-workspaces sandbox result remains a known failure as described above, not a passing integration test.
+Current regression results for this extension: `python -m pytest services/api/tests -q` passes 36 tests; NEAR host contract tests pass 8; the existing X1 Hardhat suite passes 7; and the NEAR Wasm build plus near-workspaces sandbox integration test pass. These local results do not establish a live NEAR deployment or an end-to-end wallet transaction.
 
 ## Documentation
 

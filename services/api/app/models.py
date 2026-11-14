@@ -260,7 +260,7 @@ class ModelUsage(Base):
     cost_usd: Mapped[float | None] = mapped_column(Float)
     succeeded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     error_code: Mapped[str | None] = mapped_column(String(64))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
 
 
 class DocumentExtraction(Base):

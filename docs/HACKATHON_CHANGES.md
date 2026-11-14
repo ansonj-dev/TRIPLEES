@@ -27,13 +27,13 @@ Bids are internal software scheduling estimates, not external economic actors. `
 - Reviewer-approved pending commitments, RPC transaction validation, final state read-back, persistence, and public report JSON verification.
 - Separate NEAR configuration and database state; X1 remains unchanged.
 
-The contract builds and 8 host tests pass. The near-workspaces sandbox test currently fails with `PrepareError::Deserialization` for both Wasm build outputs and is not claimed as passing.
+The NEAR registry builds and its local test suite passes: 8 host tests plus the near-workspaces sandbox test, which exercises the optimized `cargo-near` artifact. The sandbox compatibility fix pins near-sdk 5.17.2 and Rust 1.86.0 for the bundled protocol-77 sandbox. Raw `cargo build` output requires cargo-near's `wasm-opt` post-step. No live NEAR deployment or transaction is claimed.
 
 ## 4. Known Limitations
 
 - No NEAR contract deployment, reviewer grant, wallet signature, or testnet transaction has occurred; no NEAR address or transaction hash is claimed.
 - NEAR flags default to disabled. A deployed contract and on-chain reviewer grant are required to exercise the wallet flow.
-- Resolve sandbox compatibility before deployment. Backend tests mock RPC responses; there is no live NEAR end-to-end test. No browser automation test was run.
+- Local sandbox compatibility is verified. Backend tests mock RPC responses; there is no live NEAR end-to-end test. No browser automation test was run.
 - NEAR is not application authentication. Optional payments, NEAR Intents, mainnet, live public research, and live Nemotron inference are not enabled or claimed.
 - Production authentication is not integrated. TRIPLEES is an evidence-intelligence prototype, not a production certification authority.
 

@@ -25,7 +25,7 @@ Audit date: 2026-11-13
 - Repository worktree was clean before this audit.
 - Pre-change baseline: `python -m pytest services/api/tests -q` passed 30 tests after installing pytest; `npm --prefix services/contracts test && npm --prefix services/contracts run compile` passed 7 Hardhat tests and compilation.
 - Current regression: 36 API tests, 8 NEAR host contract tests, and 7 X1 Hardhat tests pass. Both modified frontend scripts pass `node --check`; the complete Alembic chain upgrades on temporary SQLite.
-- Rust and `cargo-near` were installed locally. `cargo near build non-reproducible-wasm` builds the registry. The near-workspaces 5.0.0 sandbox test was attempted with both cargo-near and plain cargo Wasm; both fail with `PrepareError::Deserialization`. This remains unresolved and is not reported as passing.
+- Rust and `cargo-near` are installed locally. The initial near-workspaces 5.0.0 sandbox test failed with `PrepareError::Deserialization`: near-sdk 5.30.1 targeted protocol 85, while bundled near-sandbox 2.6.2 uses protocol 77. Resolved for the supported artifact on 2026-11-14 by pinning near-sdk 5.17.2, Rust 1.86.0, and Rust-1.86-compatible transitive dependencies. `npm test` in `services/contracts/near-report-registry/` now passes all 8 host tests and the sandbox test. Raw `cargo build` output still needs cargo-near's `wasm-opt` post-step before it can run in the sandbox.
 - No NEAR deployment, reviewer grant, wallet signature, or testnet transaction has been attempted.
 - The current official hackathon guide is linked at `https://nearhackathon.com/HACKATHON.md`; its submission instructions require human confirmation before submission, publicizing, posting, transactions, or deployments.
 
@@ -89,4 +89,4 @@ Audit date: 2026-11-13
 
 ## Scope Limits
 
-No NEAR contract is deployed or configured in this checkout. Deployment and real transaction claims require a user-controlled testnet account, reviewer grant, explicit approval, and independent testnet verification. Resolve the local sandbox `PrepareError::Deserialization` before deployment. Production identity is not supported by the existing prototype. No live external research or AI inference is claimed unless separately configured and exercised.
+No NEAR contract is deployed or configured in this checkout. The local sandbox deserialization blocker is resolved and its tests pass. Deployment and real transaction claims still require a user-controlled testnet account, reviewer grant, explicit approval, and independent testnet verification. Production identity is not supported by the existing prototype. No live external research or AI inference is claimed unless separately configured and exercised.

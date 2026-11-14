@@ -41,9 +41,9 @@ NEAR_ENABLED=true
 NEAR_REPORT_COMMITMENTS_ENABLED=true
 ```
 
-Build and run host tests with `cargo test` and `cargo near build non-reproducible-wasm` in `services/contracts/near-report-registry`. Eight host tests pass. The local near-workspaces test currently fails with `PrepareError::Deserialization` for both cargo-near and plain cargo Wasm; resolve this before deployment. No NEAR deployment/transaction has been performed.
+From `services/contracts/near-report-registry`, run `npm test` to build the optimized Wasm with cargo-near, run the 8 Rust host tests, and exercise the near-workspaces sandbox. This passes with the package-pinned near-sdk 5.17.2 and Rust 1.86.0 toolchain, compatible with the bundled protocol-77 sandbox. Raw `cargo build` output is not directly sandbox-ready; cargo-near's `wasm-opt` post-step is required. No NEAR deployment or transaction has been performed.
 
-After that blocker is resolved and a human explicitly approves, the official [NEAR Rust quickstart](https://docs.near.org/smart-contracts/quickstart) shows the testnet deployment form:
+After the local checks pass and a human explicitly approves, the official [NEAR Rust quickstart](https://docs.near.org/smart-contracts/quickstart) shows the testnet deployment form:
 
 ```bash
 export CONTRACT_ID=triplees-report-registry.testnet

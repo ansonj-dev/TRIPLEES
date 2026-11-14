@@ -41,4 +41,4 @@ npm ci
 npm run test:sandbox
 ```
 
-Eight host tests pass and `cargo-near` builds the Wasm. The near-workspaces 5.0.0 sandbox test currently fails with `PrepareError::Deserialization` for both cargo-near and plain cargo output. This is unresolved and is not reported as a passing test. No deployment or transaction has been performed.
+The complete local contract suite passes: eight Rust unit tests and the near-workspaces 5.0.0 sandbox test. The failure was a protocol mismatch: near-sdk 5.30.1 produced protocol-85 Wasm for the bundled near-sandbox 2.6.2 (protocol 77). The contract now pins near-sdk 5.17.2, Rust 1.86.0, and compatible transitive dependencies. The sandbox test uses the optimized `cargo-near` artifact; raw `cargo build` output must first go through cargo-near's `wasm-opt` post-step. No deployment or transaction has been performed.

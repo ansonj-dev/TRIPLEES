@@ -770,6 +770,11 @@ def test_public_near_verification_rehashes_the_supplied_report(isolated_backend,
         assert mismatch.status_code == 200
         assert mismatch.json()["result"] == "MISMATCH"
         assert mismatch.json()["digest_matches"] is False
+        for invalid_timestamp in (123, True, [], {}):
+            invalid = client.post("/api/public/near/commitments/NRC-PUBLIC-TEST/verify", json={
+                "report": {**report_document, "created_at": invalid_timestamp},
+            })
+            assert invalid.status_code == 422
         public_record = client.get("/api/public/near/commitments/NRC-PUBLIC-TEST").json()
         assert "report_id" not in public_record
         assert "approval_reason" not in public_record

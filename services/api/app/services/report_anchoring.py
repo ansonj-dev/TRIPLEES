@@ -15,6 +15,8 @@ def _utc_iso(value) -> str | None:
         return None
     if isinstance(value, str):
         value = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if not isinstance(value, datetime):
+        raise ValueError("Report creation time must be an ISO 8601 timestamp.")
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
