@@ -373,3 +373,6 @@ body:has(.auth-shell) { background:var(--near-paper) !important; color:var(--nea
 @media (max-width:560px) {
   .workspace-body .near-identity-pill { display:none; }
 }
+
+.workspace-body .near-identity-pill[data-state="error"] { border-color:#e2b6a9; background:#fff0e9; color:#a4492f; }
+.workspace-body .near-identity-pill[data-state="error"] i { background:#c65d3b; }
