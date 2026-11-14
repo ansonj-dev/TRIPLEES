@@ -192,6 +192,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
         if row is None or row.status != "running" or row.worker_id != worker_id:
             return
         tasks = list(db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id)))
+        task_coordination_active = config.AGENT_COORDINATION_ENABLED and bool(tasks)
         requested_task_id = row.requested_agent_task_id
         requested_task = db.get(AgentTask, requested_task_id) if requested_task_id else None
         if requested_task_id and (
@@ -251,7 +252,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 return
             # A targeted task execution is a new unit of work even when the same
             # agent has completed another task in this investigation.
-            if agent_cls.agent_key in completed_keys and not requested_task_id:
+            if agent_cls.agent_key in completed_keys and not requested_task_id and not task_coordination_active:
                 continue
             was_budget_charged = False
             if requested_task_id:
