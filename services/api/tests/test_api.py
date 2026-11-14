@@ -1064,6 +1064,9 @@ def test_near_mismatched_transaction_hash_can_be_replaced(isolated_backend, monk
                 raise NearTransactionMismatch("The transaction signer or call does not match the approved commitment.")
             return "confirmed"
 
+        def get_report_commitment(self, _contract_id, _investigation_id, _report_version):
+            return None
+
     monkeypatch.setattr(near_routes, "NearChainClient", FakeNearChain)
     with TestClient(app) as client:
         headers, _investigation, report = _create_near_report(client)
