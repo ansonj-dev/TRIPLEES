@@ -203,16 +203,50 @@ def confirm_near_commitment(commitment_id: str, body: ConfirmCommitmentRequest, 
             body.transaction_hash, row.near_account_id, row.contract_id, _expected(row),
         )
     except NearTransactionMismatch as exc:
-        # A conclusively mismatched transaction must not permanently lock the
-        # pending commitment to the wrong hash. Keep an audit trail and permit
-        # the reviewer to submit the correct transaction hash.
+        # Reconcile contract state before allowing another hash. A previous
+        # successful commitment may already exist even if the submitted hash
+        # was wrong; a conflicting on-chain version must not be treated as retryable.
         rejected_hash = row.transaction_hash
-        row.transaction_hash = None
-        row.failure_summary = "A submitted transaction did not match the approved report commitment."
-        _event(db, investigation, "near_report_commitment_transaction_rejected", {
-            "commitment_id": row.id, "rejected_transaction_hash": rejected_hash,
-            "reason": str(exc), "near_account_id": row.near_account_id,
-        })
+        try:
+            existing_record = NearChainClient().get_report_commitment(
+                row.contract_id, row.investigation_id, row.report_version,
+            )
+        except (NearConfigurationError, NearNetworkError, NearRpcError, NearChainError) as chain_exc:
+            raise HTTPException(
+                503,
+                detail={"code": "near_reconciliation_unavailable",
+                        "message": "The transaction did not match and the NEAR contract state could not be reconciled. The commitment remains pending; retry reconciliation when the testnet is available."},
+            ) from chain_exc
+
+        if existing_record and _on_chain_matches(row, existing_record):
+            # The expected immutable commitment is already on-chain. Mark it
+            # confirmed from contract state, but do not retain the rejected hash.
+            row.status = "confirmed"
+            row.transaction_hash = None
+            row.failure_summary = None
+            row.confirmed_at = utcnow()
+            _event(db, investigation, "near_report_commitment_reconciled_from_chain", {
+                "commitment_id": row.id, "report_version": row.report_version,
+                "sha256": row.report_digest, "contract_id": row.contract_id,
+                "network": "testnet", "rejected_transaction_hash": rejected_hash,
+            })
+            db.commit()
+            return _commitment_view(row)
+
+        if existing_record:
+            row.status = "failed"
+            row.failure_summary = "The NEAR contract already contains a conflicting commitment for this investigation version."
+            _event(db, investigation, "near_report_commitment_on_chain_conflict", {
+                "commitment_id": row.id, "report_version": row.report_version,
+                "rejected_transaction_hash": rejected_hash, "reason": str(exc),
+            })
+        else:
+            row.transaction_hash = None
+            row.failure_summary = "A submitted transaction did not match the approved report commitment."
+            _event(db, investigation, "near_report_commitment_transaction_rejected", {
+                "commitment_id": row.id, "rejected_transaction_hash": rejected_hash,
+                "reason": str(exc), "near_account_id": row.near_account_id,
+            })
         db.commit()
         raise HTTPException(422, detail={"code": "near_transaction_mismatch", "message": str(exc)}) from exc
     except NearNetworkError as exc:
