@@ -57,6 +57,7 @@ def test_evidence_analyst_requires_context_citations_and_wraps_data_as_untrusted
         project={"id": "P-1", "name": "Forest"},
         evidence=[{"id": "EVD-1", "filename": "report.pdf", "sha256": "a" * 64, "text_excerpt": "The project claims 100 tCO2e."}],
         external_ai_authorized=True,
+        external_service_allowed=True,
     )
     result = EvidenceAnalyst(provider).run(context)
     assert result.status == "completed"
@@ -100,7 +101,7 @@ def test_monitoring_agent_labels_synthetic_signals_and_does_not_claim_live_data(
 
 
 def test_research_agent_marks_unavailable_research_and_rejects_unsafe_urls():
-    context = AgentContext(project={"name": "Forest"}, public_research_authorized=True, source_references=[
+    context = AgentContext(project={"name": "Forest"}, public_research_authorized=True, external_service_allowed=True, source_references=[
         {"id": "SRC-1", "title": "Supplied source", "url": "https://registry.example.org/project"},
         {"id": "SRC-2", "title": "Private service", "url": "https://127.0.0.1/admin"},
     ])
@@ -124,7 +125,7 @@ def test_research_agent_records_real_retrieval_time_and_filters_non_public_resul
                 {"title": "Local admin", "publisher": "Internal", "url": "https://localhost/admin"},
             ]
 
-    result = ResearchInvestigator(Provider()).run(AgentContext(project={"name": "Forest"}, public_research_authorized=True))
+    result = ResearchInvestigator(Provider()).run(AgentContext(project={"name": "Forest"}, public_research_authorized=True, external_service_allowed=True))
     assert result.status == "completed"
     assert len(result.output.sources) == 1
     assert result.output.sources[0].domain == "registry.example.org"
@@ -159,3 +160,84 @@ def test_agent_output_model_rejects_unvalidated_claim_and_source_shapes():
         pass
     else:
         raise AssertionError("Missing evidence/source fields must be rejected by the structured schema.")
+
+
+def test_external_service_permission_blocks_evidence_model_calls():
+    provider = FakeProvider('{"summary":"not used","findings":[],"claims":[],"limitations":[],"sources":[]}')
+    context = AgentContext(
+        project={"id": "P-1", "name": "Forest"},
+        evidence=[{"id": "EVD-1", "filename": "report.txt", "extraction_status": "complete"}],
+        external_ai_authorized=True,
+        external_service_allowed=False,
+    )
+    result = EvidenceAnalyst(provider).run(context)
+    assert result.status == "completed_with_limitations"
+    assert result.error_code == "external_service_not_permitted"
+    assert provider.messages == []
+
+
+def test_independent_review_only_claims_model_review_when_model_was_called():
+    provider = FakeProvider('{"summary":"Model review completed.","findings":[],"claims":[],"limitations":[],"sources":[]}')
+    context = AgentContext(
+        project={"id": "P-1", "name": "Forest"},
+        external_ai_authorized=True,
+        external_service_allowed=True,
+    )
+    result = IndependentReviewAgent(provider).run(context, [])
+    assert result.status == "completed"
+    assert result.usage.provider == provider.provider_name
+    assert all("adversarial model call was not performed" not in item for item in result.output.limitations)
+
+
+def test_independent_review_respects_external_service_permission():
+    provider = FakeProvider('{"summary":"not used","findings":[],"claims":[],"limitations":[],"sources":[]}')
+    context = AgentContext(
+        project={"id": "P-1", "name": "Forest"},
+        external_ai_authorized=True,
+        external_service_allowed=False,
+    )
+    result = IndependentReviewAgent(provider).run(context, [])
+    assert result.status == "completed_with_limitations"
+    assert result.error_code == "external_service_not_permitted"
+    assert provider.messages == []
+
+
+def test_research_agent_respects_external_service_permission():
+    class Provider:
+        provider_name = "test_search"
+
+        def __init__(self):
+            self.calls = 0
+
+        def search(self, _query, *, max_results):
+            self.calls += 1
+            return []
+
+    provider = Provider()
+    result = ResearchInvestigator(provider).run(AgentContext(
+        project={"name": "Forest"},
+        public_research_authorized=True,
+        external_service_allowed=False,
+    ))
+    assert result.status == "completed_with_limitations"
+    assert result.error_code == "external_service_not_permitted"
+    assert provider.calls == 0
+
+
+def test_observation_timestamp_requires_timezone_aware_iso_datetime():
+    import pytest
+    from pydantic import ValidationError
+    from services.api.app.schemas import ObservationCreate
+
+    payload = {
+        "source_name": "Demo source",
+        "signal_type": "forest_loss",
+        "severity": "medium",
+        "observed_at": "2026-11-14T10:30:00+05:30",
+        "description": "A synthetic observation for validation tests.",
+    }
+    observation = ObservationCreate.model_validate(payload)
+    assert observation.observed_at == "2026-11-14T05:00:00Z"
+    for invalid in ("not-a-date", "2026-11-14", "2026-11-14T10:30:00"):
+        with pytest.raises(ValidationError):
+            ObservationCreate.model_validate({**payload, "observed_at": invalid})

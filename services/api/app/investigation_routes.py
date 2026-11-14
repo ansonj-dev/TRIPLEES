@@ -57,7 +57,7 @@ def _view(row: Investigation, executions: list[AgentExecution] | None = None) ->
         "created_at": row.created_at.isoformat() if row.created_at else None,
         "started_at": row.started_at.isoformat() if row.started_at else None,
         "completed_at": row.completed_at.isoformat() if row.completed_at else None,
-        "executions": [{"id": x.id, "agent_key": x.agent_key, "attempt_number": x.attempt_number,
+        "executions": [{"id": x.id, "agent_key": x.agent_key, "task_id": x.task_id, "attempt_number": x.attempt_number,
                         "status": x.status, "task_summary": x.task_summary, "output": json.loads(x.output_json) if x.output_json else None,
                         "error_code": x.error_code, "started_at": x.started_at.isoformat() if x.started_at else None,
                         "completed_at": x.completed_at.isoformat() if x.completed_at else None} for x in (executions or [])],
@@ -134,6 +134,7 @@ def run_investigation(investigation_id: str, response: Response, db: Session = D
     row.status = "queued"
     row.cancel_requested = False
     row.requested_agent_keys_json = None
+    row.requested_agent_task_id = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
@@ -151,6 +152,7 @@ def cancel_investigation(investigation_id: str, db: Session = Depends(get_db), u
     if row.status in {"queued", "retry_wait", "draft"}:
         row.status = "cancelled"
         row.cancel_requested = True
+        row.requested_agent_task_id = None
         row.completed_at = utcnow()
         for task in db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id, AgentTask.status.in_(["assigned", "running"]))):
             task.status = "cancelled"
@@ -178,6 +180,7 @@ def retry_investigation(investigation_id: str, body: InvestigationRetry, db: Ses
     row.status = "queued"
     row.cancel_requested = False
     row.requested_agent_keys_json = None
+    row.requested_agent_task_id = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
@@ -203,7 +206,7 @@ def investigation_agents(investigation_id: str, db: Session = Depends(get_db), u
         if execution.agent_key not in latest or execution.attempt_number > latest[execution.agent_key].attempt_number:
             latest[execution.agent_key] = execution
     return {"investigation_id": row.id, "status": row.status, "items": [{
-        "agent_key": key, "execution_id": item.id, "attempt_number": item.attempt_number,
+        "agent_key": key, "execution_id": item.id, "task_id": item.task_id, "attempt_number": item.attempt_number,
         "status": item.status, "task_summary": item.task_summary, "error_code": item.error_code,
         "started_at": item.started_at.isoformat() if item.started_at else None,
         "completed_at": item.completed_at.isoformat() if item.completed_at else None,

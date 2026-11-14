@@ -8,7 +8,7 @@ function setMode(nextMode) {
   document.querySelectorAll('.auth-tab').forEach((tab) => { const active = tab.dataset.authMode === mode; tab.classList.toggle('active', active); tab.setAttribute('aria-selected', String(active)); });
   document.querySelectorAll('[data-signup-only]').forEach((node) => { node.hidden = mode !== 'signup'; });
   document.querySelector('#auth-title').textContent = mode === 'signup' ? 'Create your workspace' : 'Welcome back';
-  document.querySelector('#auth-subtitle').textContent = mode === 'signup' ? 'Create a local prototype account to start tracking projects.' : 'Sign in to your local TRIPLEES workspace.';
+  document.querySelector('#auth-subtitle').textContent = mode === 'signup' ? 'Create a TRIPLEES workspace account. Your NEAR wallet is connected separately for report signing.' : 'Sign in to TRIPLEES. Connect a NEAR testnet wallet separately when a reviewer is ready to sign a report.';
   document.querySelector('#auth-submit').textContent = mode === 'signup' ? 'Create account' : 'Sign in';
   document.querySelector('#auth-password').autocomplete = mode === 'signup' ? 'new-password' : 'current-password';
   message.hidden = true;

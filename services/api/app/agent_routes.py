@@ -183,6 +183,9 @@ def assign_agent_task(task_id: str, body: TaskAssignmentRequest, db: Session = D
         candidate.selection_status = "selected" if candidate.id == bid.id else "rejected"
     task.agent_id = bid.agent_id
     task.budget_allocated = bid.estimated_cost
+    task.result_reference = None
+    task.completed_at = None
+    task.error_info = None
     if previous_agent != task.agent_id:
         task.approved_by = None
         task.approval_reason = None
@@ -225,7 +228,8 @@ def execute_agent_task(task_id: str, response: Response, db: Session = Depends(g
     if investigation.status not in {"draft", "partial", "failed", "completed", "completed_with_limitations"}:
         raise HTTPException(409, detail={"code": "investigation_not_runnable", "message": "The investigation is not available for another task execution."})
     investigation.status = "queued"
-    investigation.requested_agent_keys_json = json.dumps([task.agent_id], separators=(",", ":"))
+    investigation.requested_agent_keys_json = None
+    investigation.requested_agent_task_id = task.id
     investigation.cancel_requested = False
     investigation.failure_summary = None
     investigation.completed_at = None
@@ -294,6 +298,10 @@ def update_agent_budget(body: BudgetUpdateRequest, db: Session = Depends(get_db)
         agent_budget.budget_limit = agent_limit
         agent_budget.updated_at = utcnow()
     for task in db.scalars(select(AgentTask).where(AgentTask.investigation_id == investigation.id)):
+        # Budget edits must not rewrite the history or terminal state of completed,
+        # failed, cancelled, or currently running work.
+        if task.status not in {"created", "available", "assigned", "awaiting_review"}:
+            continue
         if task.budget_allocated > budget.approval_threshold and task.approved_by is None:
             task.status = "awaiting_review"
         elif task.status == "awaiting_review":

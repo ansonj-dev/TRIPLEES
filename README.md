@@ -1,8 +1,8 @@
-# TRIPLEES | Evidence Intelligence for Carbon Markets
+# TRIPLEES | Environmental Evidence Intelligence
 
 **Investigate. Verify. Trace.**
 
-TRIPLEES is an evidence-first workspace for investigating carbon projects and making their supporting records easier to examine. It brings documents, registry imports, monitoring observations, structured analysis, reviewer decisions, and tamper-evident report commitments into one auditable workflow.
+TRIPLEES is a NEAR-integrated, evidence-first workspace for investigating carbon and climate projects. It connects project documents, registry imports, monitoring observations, scoped analysis, human reviewer decisions and versioned report-integrity commitments in one auditable workflow.
 
 The aim is practical: help teams move from scattered project records to clear, source-linked findings, while keeping uncertainty visible and human judgment in control. TRIPLEES treats AI as an analytical assistant, not an authority; deterministic checks and reviewer decisions remain distinct from model-generated suggestions.
 
@@ -17,7 +17,7 @@ TRIPLEES organizes the investigation lifecycle around traceable inputs and revie
 1. **Collect and fingerprint evidence.** Manage project records, extract supported document text, retain source locations, and calculate SHA-256 digests for stored evidence.
 2. **Analyze within defined roles.** Five bounded agents cover evidence, public research, registry integrity, monitoring, and independent review. Each works from caller-provided context and reports its sources and limitations.
 3. **Build a review trail.** Persist investigations, agent activity, findings, report versions, and reviewer decisions so that conclusions can be examined against their inputs.
-4. **Anchor approved records.** Where explicitly configured and approved, record project or evidence identifiers on X1 EcoChain and commit reviewer-approved report digests. Evidence files and report contents remain off-chain.
+4. **Verify approved reports.** After human review, a reviewer can sign a NEAR testnet transaction to commit the report version's canonical SHA-256 digest. The existing X1 EcoChain project/evidence workflows remain separate. Evidence files and report contents remain off-chain.
 
 The result is an investigation workflow designed for explainability: distinguish imported facts from synthetic examples, deterministic checks from AI suggestions, and a recorded hash from proof of an environmental outcome.
 
@@ -79,21 +79,21 @@ TRIPLEES keeps source material, analysis, and decisions distinct so a reviewer c
 
 The five agent roles do not have arbitrary tools or authority to approve credits, sign transactions, or make environmental determinations. AI output is an aid to review, not a substitute for source inspection or human judgment.
 
-## NEAR Hackathon Extension
+## NEAR as the Report Integrity Layer
 
-The NEAR extension adds a testnet-only report registry and an internal task-coordination layer to this existing TRIPLEES product. It does not replace X1, the current AI provider, or the existing five agents.
+NEAR is TRIPLEES's public verification layer for reviewer-approved report versions. The platform collects project records and evidence, runs scoped investigations, records source-linked findings and preserves human decisions. Once a reviewer approves a report, the canonical SHA-256 digest can be committed to the NEAR testnet registry.
 
-The flow is: create and run an investigation, inspect its source-linked findings, have a reviewer approve a report digest, connect a NEAR testnet wallet, sign the registry call in that wallet, wait for API verification of the final transaction and contract state, then share the public verification link. The contract stores only an investigation identifier, report version, SHA-256 digest, submitter, timestamp, and optional metadata digest. A digest does not establish that environmental claims are true.
+The wallet signs, the contract records, and the public verifier checks. NEAR stores only the investigation identifier, report version, digest, submitting account, timestamp and optional non-sensitive metadata digest. Original evidence, full report content, personal data, agent notes and reviewer reasons remain off-chain. A matching digest proves file integrity relative to the committed digest; it does not establish that environmental claims are true.
 
-The browser uses the officially recommended [NEAR Connect](https://docs.near.org/tools/near-connect) package (`@hot-labs/near-connect` 0.12.0), loaded as a pinned ESM bundle. The backend never signs NEAR transactions. X1 report anchoring remains a separate integration with separate configuration and signers.
+The browser uses [NEAR Connect](https://docs.near.org/tools/near-connect) and `@hot-labs/near-connect` 0.12.0 to open the wallet chooser and request user-authorized signing. The backend does not hold a NEAR signing key. The TRIPLEES application login and NEAR wallet are separate: the wallet is connected when a reviewer needs to sign a report commitment.
 
-Agent tasks, bids, budgets, permissions, and stop controls are persisted in the existing database. Bids are deterministic estimates made by TRIPLEES software agents; budget amounts are `internal_units`, not NEAR or money. No external agent payments or automatic token transfers are enabled.
+The existing X1 EcoChain integrations remain separate. They have distinct configuration, contracts, network checks and transaction states. NEAR does not replace or migrate X1 records. Agent tasks, bids, budgets, permissions and stop controls are persisted in the application database; bids are internal estimates and `internal_units` are not NEAR balances or payments.
 
-See the [NEAR implementation plan](docs/NEAR_IMPLEMENTATION_PLAN.md), [NEAR architecture](docs/NEAR_ARCHITECTURE.md), [agent coordination](docs/AGENT_COORDINATION.md), [report verification](docs/REPORT_VERIFICATION.md), [security](docs/SECURITY.md), and [hackathon changes](docs/HACKATHON_CHANGES.md).
+Read the [NEAR product overview](docs/NEAR_PRODUCT_OVERVIEW.md), [NEAR user guide](docs/NEAR_USER_GUIDE.md), [NEAR architecture](docs/NEAR_ARCHITECTURE.md), [report verification guide](docs/REPORT_VERIFICATION.md), [agent coordination](docs/AGENT_COORDINATION.md) and [security boundaries](docs/SECURITY.md).
 
 ### Enable NEAR Testnet
 
-NEAR is disabled by default. After a reviewed deployment and on-chain reviewer grant, set these public values in an ignored local `.env`:
+NEAR wallet support and report commitments are disabled by default. Configure them only after the registry contract has been deployed and the intended reviewer account has been granted permission on NEAR testnet. Set the public values in an ignored local `.env` file:
 
 ```dotenv
 NEAR_ENABLED=true
@@ -102,17 +102,19 @@ NEAR_NETWORK=testnet
 NEAR_REPORT_REGISTRY_CONTRACT_ID=your-registry.testnet
 ```
 
-No NEAR contract, reviewer grant, wallet signature, or testnet transaction has been performed for this checkout. The local host and sandbox tests now pass with the pinned SDK and Rust toolchain; deployment still requires a user-controlled testnet account, reviewer setup, and explicit approval.
+Feature flags do not deploy a contract or grant reviewer permission. No deployment, reviewer grant, wallet signature or testnet transaction is claimed for a fresh checkout. See [Report Verification](docs/REPORT_VERIFICATION.md) for contract setup gates and independent confirmation requirements.
 
-### Demonstration
+### Product walkthrough
 
-1. Start the API and worker using the local demo steps below, then sign in with **Explore the demo workspace**.
-2. Open **Investigation Center**, create an investigation for a project, and queue it. The existing five agents produce scoped outputs; research and AI limitations remain visible.
-3. Open **Agent Activity** to inspect persisted tasks, internal proposals, budget state, and audit history. Thresholded tasks wait for reviewer approval.
-4. Open **Investigation Reports**, review the report, and prepare a NEAR commitment. The connected testnet wallet prompts for the transaction; the API confirms only after the network outcome and contract state match.
-5. Open the public NEAR verification link and upload the downloaded report JSON. The unchanged report should return `VERIFIED`; a modified report should return `MISMATCH`.
+1. Start the API and worker using the local setup steps below, then sign in with **Explore the demo workspace**.
+2. Open **Projects** and **Evidence** to inspect or add records. Sample content remains labelled as synthetic.
+3. Open **Investigation Center**, define the project scope and queue an investigation. The five existing roles create bounded outputs with sources and limitations.
+4. Use **Risk Intelligence** and **Review Queue** to inspect findings and record authorized human decisions.
+5. Open **Investigation Reports** and inspect an approved report version. Use **NEAR Wallet & Registry** to connect a NEAR testnet wallet when the registry is configured.
+6. Prepare the report commitment and approve the transaction in the wallet. TRIPLEES marks it confirmed only after backend transaction and contract-state verification.
+7. Share the public NEAR verification link and upload the exact downloaded report JSON to check the digest.
 
-Steps 4-5 require a deployed registry and an account granted reviewer permission. Without those values, the rest of TRIPLEES remains usable and NEAR controls stay unavailable.
+The NEAR steps require a deployed registry and a reviewer account with contract permission. The rest of the TRIPLEES workspace remains usable while those optional settings are disabled.
 
 ## Repository Structure
 
@@ -344,7 +346,8 @@ The README is the product tour and local demo guide. The focused references belo
 | Blockchain | [Report verification](docs/REPORT_VERIFICATION.md) | Canonical digest, wallet signing, verification, and deployment gate |
 | Investigations | [Agent coordination](docs/AGENT_COORDINATION.md) | Internal bids, task assignment, budgets, permissions, emergency stop |
 | Security | [Security](docs/SECURITY.md) | Wallet, API, transaction, privacy, and prototype boundaries |
-| Hackathon | [Hackathon changes](docs/HACKATHON_CHANGES.md) | Existing product, new work, NEAR features, and limitations |
+| NEAR product | [Product overview](docs/NEAR_PRODUCT_OVERVIEW.md) | Problem, product workflow, role of NEAR, trust boundaries and differentiation |
+| NEAR product | [User guide](docs/NEAR_USER_GUIDE.md) | Workspace walkthrough, wallet connection, report signing and public verification |
 | Operations | [Production operations](docs/PRODUCTION_OPERATIONS.md) | Database/storage, security limits, backups, and production readiness gate |
 | Operations | [Implementation checklist](docs/IMPLEMENTATION_CHECKLIST.md) | Delivery checklist and outstanding engineering work |
 | Status | [Current-state audit](docs/TRIPLEES_CURRENT_STATE_AUDIT.md) | Verified components, limits, and audit findings |

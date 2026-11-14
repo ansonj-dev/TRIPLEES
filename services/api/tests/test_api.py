@@ -920,3 +920,182 @@ def test_bidding_flag_keeps_primary_agent_assignment(isolated_backend, monkeypat
         assert len(tasks) == 5
         assert all(task["bids"] == [] for task in tasks)
         assert all(task["status"] == "assigned" for task in tasks)
+
+
+def test_reassigned_task_executes_as_new_task_and_budget_edits_preserve_completion(isolated_backend):
+    from sqlalchemy import select
+    from services.api.app.models import AgentExecution, AgentTask
+    from services.api.app.services.agents.common import AgentExecutionResult
+    from services.api.app.services.ai.structured_output import AgentOutput
+    from services.api.worker import claim_next_job, process_job
+
+    class FakeEvidenceAgent:
+        agent_key = "evidence_analyst"
+        task_summary = "Run evidence role against a selected coordination task."
+
+        def run(self, _context):
+            return AgentExecutionResult(
+                self.agent_key, "completed", self.task_summary,
+                AgentOutput(summary="Task-specific fixture execution completed."),
+            )
+
+    with TestClient(app) as client:
+        headers, investigation, _ = _create_near_report(client)
+        planned = client.post("/api/agents/tasks", headers=headers, json={"investigation_id": investigation["id"]})
+        assert planned.status_code == 201
+        tasks = planned.json()["items"]
+        evidence_task = next(item for item in tasks if item["task_type"] == "evidence_analysis")
+        registry_task = next(item for item in tasks if item["task_type"] == "registry_integrity")
+
+        first_queue = client.post(f"/api/agents/tasks/{evidence_task['id']}/execute", headers=headers)
+        assert first_queue.status_code == 202
+        worker_id = "task-identity-worker-1"
+        assert claim_next_job(worker_id) == investigation["id"]
+        process_job(investigation["id"], worker_id, (FakeEvidenceAgent,))
+
+        first_done = client.get(f"/api/agents/tasks/{evidence_task['id']}", headers=headers).json()
+        assert first_done["status"] == "completed"
+        first_execution_id = first_done["result_reference"]
+
+        evidence_bid = next(bid for bid in registry_task["bids"] if bid["agent_id"] == "evidence_analyst")
+        reassigned = client.post(
+            f"/api/agents/tasks/{registry_task['id']}/assign",
+            headers=headers, json={"bid_id": evidence_bid["id"]},
+        )
+        assert reassigned.status_code == 200
+        assert reassigned.json()["agent_id"] == "evidence_analyst"
+        assert reassigned.json()["status"] == "assigned"
+
+        second_queue = client.post(f"/api/agents/tasks/{registry_task['id']}/execute", headers=headers)
+        assert second_queue.status_code == 202
+        worker_id = "task-identity-worker-2"
+        assert claim_next_job(worker_id) == investigation["id"]
+        process_job(investigation["id"], worker_id, (FakeEvidenceAgent,))
+
+        registry_done = client.get(f"/api/agents/tasks/{registry_task['id']}", headers=headers).json()
+        assert registry_done["status"] == "completed"
+        assert registry_done["result_reference"] != first_execution_id
+        with app_db.SessionLocal() as db:
+            second_execution = db.get(AgentExecution, registry_done["result_reference"])
+            assert second_execution is not None
+            assert second_execution.task_id == registry_task["id"]
+            assert db.scalar(select(AgentExecution.id).where(
+                AgentExecution.id == first_execution_id, AgentExecution.task_id == evidence_task["id"],
+            )) == first_execution_id
+            saved_task = db.get(AgentTask, registry_task["id"])
+            completed_at = saved_task.completed_at
+            result_reference = saved_task.result_reference
+
+        budget_update = client.post("/api/agents/budgets", headers=headers, json={
+            "investigation_id": investigation["id"], "budget_limit": 10,
+            "approval_threshold": 0.1, "agent_limits": {
+                "evidence_analyst": 2, "integrity_analyst": 2, "research_investigator": 2,
+                "monitoring_analyst": 2, "independent_review_agent": 2,
+            },
+        })
+        assert budget_update.status_code == 200
+        preserved = client.get(f"/api/agents/tasks/{registry_task['id']}", headers=headers).json()
+        assert preserved["status"] == "completed"
+        assert preserved["result_reference"] == result_reference
+        with app_db.SessionLocal() as db:
+            assert db.get(AgentTask, registry_task["id"]).completed_at == completed_at
+
+
+def test_worker_enforces_external_service_permission_when_investigation_consent_exists(isolated_backend, monkeypatch):
+    from services.api.app.services.agents import EvidenceAnalyst
+    from services.api.app.services import agents as agents_package
+    from services.api.app.services.agents import common as agent_common
+    from services.api.worker import claim_next_job, process_job
+
+    class TrackingProvider:
+        provider_name = "tracking-provider"
+
+        def __init__(self):
+            self.generate_calls = 0
+
+        def health_status(self):
+            return {"provider": self.provider_name, "configured": True}
+
+        def generate(self, _messages, *, json_mode=False):
+            self.generate_calls += 1
+            raise AssertionError("External provider must not be called without reviewer permission.")
+
+    provider = TrackingProvider()
+    monkeypatch.setattr(agent_common, "create_ai_provider", lambda: provider)
+
+    with TestClient(app) as client:
+        token = client.post("/api/auth/demo").json()["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+        project = client.post("/api/projects", headers=headers, json={
+            "name": "External permission test", "project_type": "forest", "country": "Kenya",
+        }).json()
+        investigation = client.post("/api/investigations", headers=headers, json={
+            "project_id": project["id"], "title": "Permission gate test",
+            "scope": "Test both user consent and reviewer-controlled agent permission.",
+            "external_ai_authorized": True, "public_research_authorized": False,
+        }).json()
+        plan = client.post("/api/agents/tasks", headers=headers, json={"investigation_id": investigation["id"]})
+        task = next(item for item in plan.json()["items"] if item["task_type"] == "evidence_analysis")
+        queued = client.post(f"/api/agents/tasks/{task['id']}/execute", headers=headers)
+        assert queued.status_code == 202
+
+        worker_id = "permission-gate-worker"
+        assert claim_next_job(worker_id) == investigation["id"]
+        process_job(investigation["id"], worker_id, (EvidenceAnalyst,))
+
+        assert provider.generate_calls == 0
+        finished_task = client.get(f"/api/agents/tasks/{task['id']}", headers=headers).json()
+        assert finished_task["status"] == "completed"
+        with app_db.SessionLocal() as db:
+            execution = db.get(AgentExecution, finished_task["result_reference"])
+            assert execution.error_code == "external_service_not_permitted"
+
+
+def test_near_mismatched_transaction_hash_can_be_replaced(isolated_backend, monkeypatch):
+    from services.api.app import near_routes
+    from services.api.app.models import NearCommitment
+    from services.api.app.services.near_chain import NearTransactionMismatch
+
+    _enable_near_testnet(monkeypatch)
+
+    class FakeNearChain:
+        def verify_report_transaction(self, transaction_hash, _account_id, _contract_id, _expected):
+            if transaction_hash == "1" * 44:
+                raise NearTransactionMismatch("The transaction signer or call does not match the approved commitment.")
+            return "confirmed"
+
+        def get_report_commitment(self, _contract_id, _investigation_id, _report_version):
+            return None
+
+    monkeypatch.setattr(near_routes, "NearChainClient", FakeNearChain)
+    with TestClient(app) as client:
+        headers, _investigation, report = _create_near_report(client)
+        prepared = client.post("/api/near/commitments/prepare", headers=headers, json={
+            "report_id": report.id, "near_account_id": "reviewer.testnet",
+            "reason": "The final report was checked before submission.",
+        })
+        assert prepared.status_code == 201
+        commitment_id = prepared.json()["id"]
+
+        rejected = client.post(
+            f"/api/near/commitments/{commitment_id}/confirm", headers=headers,
+            json={"transaction_hash": "1" * 44},
+        )
+        assert rejected.status_code == 422
+        with app_db.SessionLocal() as db:
+            row = db.get(NearCommitment, commitment_id)
+            assert row.status == "pending"
+            assert row.transaction_hash is None
+            assert row.failure_summary
+            assert db.query(AgentAuditEvent).filter_by(
+                investigation_id=row.investigation_id,
+                event_type="near_report_commitment_transaction_rejected",
+            ).count() == 1
+
+        retried = client.post(
+            f"/api/near/commitments/{commitment_id}/confirm", headers=headers,
+            json={"transaction_hash": "2" * 44},
+        )
+        assert retried.status_code == 200
+        assert retried.json()["status"] == "confirmed"
+        assert retried.json()["transaction_hash"] == "2" * 44

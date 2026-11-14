@@ -66,14 +66,19 @@ def permission_allowed(db: Session, agent_id: str, permission: str = "execute") 
     return bool(row and row.allowed)
 
 
-def authorize_task_start(db: Session, investigation_id: str, agent_id: str) -> tuple[AgentTask | None, str | None]:
+def authorize_task_start(
+    db: Session, investigation_id: str, agent_id: str, task_id: str | None = None,
+) -> tuple[AgentTask | None, str | None]:
     if not config.AGENT_COORDINATION_ENABLED:
         return None, None
-    task = db.scalar(select(AgentTask).where(
+    statement = select(AgentTask).where(
         AgentTask.investigation_id == investigation_id,
         AgentTask.agent_id == agent_id,
         AgentTask.status.in_(["assigned", "running", "failed", "awaiting_review"]),
-    ).order_by(AgentTask.priority, AgentTask.created_at).limit(1))
+    )
+    if task_id:
+        statement = statement.where(AgentTask.id == task_id)
+    task = db.scalar(statement.order_by(AgentTask.priority, AgentTask.created_at).limit(1))
     if task is None:
         return None, None
     if task.status == "awaiting_review":

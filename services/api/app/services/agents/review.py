@@ -55,19 +55,24 @@ class IndependentReviewAgent(ScopedAgent):
         local_output = AgentOutput(
             summary=f"Deterministic review checked {len(drafts[:200])} draft finding(s); {len(review_findings)} review issue(s) need attention.",
             findings=review_findings,
-            limitations=limitations + ["The independent adversarial model call was not performed."],
+            limitations=limitations,
         )
+        not_model_reviewed = local_output.model_copy(update={
+            "limitations": list(dict.fromkeys(local_output.limitations + ["The independent adversarial model call was not performed."]))
+        })
         if context.ai_budget_exhausted:
-            local_output = local_output.model_copy(update={"limitations": list(dict.fromkeys(local_output.limitations + ["The per-investigation AI token budget did not leave enough capacity for another model request."]))})
-            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, local_output, "ai_token_budget_exhausted")
+            not_model_reviewed = not_model_reviewed.model_copy(update={"limitations": list(dict.fromkeys(not_model_reviewed.limitations + ["The per-investigation AI token budget did not leave enough capacity for another model request."]))})
+            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, not_model_reviewed, "ai_token_budget_exhausted")
         if not context.external_ai_authorized:
-            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, local_output, "external_ai_not_authorized")
+            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, not_model_reviewed, "external_ai_not_authorized")
+        if not context.external_service_allowed:
+            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, not_model_reviewed, "external_service_not_permitted")
         try:
             health = self.provider.health_status()
         except Exception:
             health = {"configured": False}
         if not health.get("configured"):
-            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, local_output, "provider_not_configured")
+            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, not_model_reviewed, "provider_not_configured")
         payload = {
             "project": context.project,
             "evidence_ids": sorted(context.evidence_ids),
@@ -95,7 +100,7 @@ class IndependentReviewAgent(ScopedAgent):
             output = parse_structured_output(result.content, AgentOutput)
             output = validate_citations(output, context)
         except ProviderNotConfigured:
-            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, local_output, "provider_not_configured")
+            return AgentExecutionResult(self.agent_key, "completed_with_limitations", self.task_summary, not_model_reviewed, "provider_not_configured")
         except AIProviderError as exc:
             return AgentExecutionResult(self.agent_key, "failed", self.task_summary, error_code=exc.code)
         except Exception:

@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#063a2c" />
-  <meta name="description" content="TRIPLEES climate project investigation workspace for evidence intelligence, agent activity, risk review, and traceable reports." />
-  <title>Workspace — TRIPLEES</title>
+  <meta name="theme-color" content="#0b65ce" />
+  <meta name="description" content="TRIPLEES environmental evidence intelligence workspace with NEAR testnet report verification." />
+  <title>TRIPLEES — NEAR Evidence Verification Workspace</title>
   <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -13,15 +13,16 @@
   <link rel="stylesheet" href="assets/css/app.css" />
   <link rel="stylesheet" href="assets/css/workspace-ui.css?v=12" />
   <link rel="stylesheet" href="assets/css/design-refresh.css?v=4" />
+  <link rel="stylesheet" href="assets/css/near-identity.css?v=2" />
 </head>
 <body class="workspace-body">
   <a class="skip-link" href="#page-content">Skip to workspace content</a>
   <div id="app" class="app-shell">
     <aside class="sidebar" id="sidebar" aria-label="Application navigation">
       <div class="sidebar-head"><a class="app-brand" href="index.html"><span class="leaf-mark">◢</span><span>TRIPLEES</span></a><button class="collapse-btn" data-action="collapse" aria-label="Collapse sidebar" title="Collapse sidebar"><i data-lucide="panel-left-close" aria-hidden="true"></i></button></div>
-      <div class="workspace-pill"><span class="workspace-avatar">T</span><span><b>TRIPLEES workspace</b><small>Evidence review</small></span><span class="workspace-caret">⌄</span></div>
+      <div class="workspace-pill"><span class="workspace-avatar">N</span><span><b>TRIPLEES workspace</b><small>NEAR report integrity</small></span><span class="workspace-caret">⌄</span></div>
       <nav class="side-nav" id="side-nav" aria-label="Workspace pages"></nav>
-      <div class="sidebar-bottom"><span class="sidebar-mode">DEMO WORKSPACE</span></div>
+      <div class="sidebar-bottom"><span class="sidebar-mode">NEAR TESTNET / REPORT VERIFICATION</span></div>
     </aside>
     <div class="sidebar-backdrop" data-action="close-sidebar"></div>
     <main class="workspace-main">
@@ -29,19 +30,21 @@
         <button class="mobile-menu" data-action="open-sidebar" aria-label="Open navigation" title="Open navigation"><i data-lucide="menu" aria-hidden="true"></i></button>
         <div class="breadcrumbs" id="breadcrumbs"><span>Workspace</span><b>/</b><strong>Dashboard</strong></div>
         <label class="global-search"><span aria-hidden="true"><i data-lucide="search"></i></span><input id="global-search" type="search" placeholder="Search workspace…" aria-label="Search projects, credits, or locations" /><kbd>⌘ K</kbd><div class="search-results" id="search-results" hidden></div></label>
-        <span class="demo-badge"><i></i> DEMO ENVIRONMENT</span>
-        <span class="demo-badge chain-badge" id="blockchain-badge" title="Live read-only X1 Maculatus RPC status"><i></i> X1 CHECKING</span>
+        <span class="near-identity-pill" id="near-topbar-status" aria-live="polite"><i></i> NEAR TESTNET / CHECKING</span>
+        <a class="near-wallet-entry" href="#/near-account" aria-label="Open NEAR wallet and report registry"><i data-lucide="wallet-cards" aria-hidden="true"></i> NEAR ACCOUNT ↗</a>
+        <span class="demo-badge"><i></i> SAMPLE DATA</span>
+        <span class="demo-badge chain-badge" id="blockchain-badge" title="Separate X1 EcoChain integration status"><i></i> X1 CHECKING</span>
         <button class="top-icon" data-route="/alerts" aria-label="Open alerts" title="Alerts"><i data-lucide="bell" aria-hidden="true"></i><span class="alert-count" id="alert-count" hidden>0</span></button>
         <button class="account-button" data-action="account"><span class="user-avatar">JD</span><span><b>Jordan Demo</b><small>Individual · Demo</small></span><span>⌄</span></button>
       </header>
-      <div class="demo-notice"><b>DEMO DATA</b><span>Synthetic records only; no credits are certified.</span><button data-action="dismiss-notice" aria-label="Dismiss demo notice">×</button></div>
+      <div class="demo-notice"><b>SAMPLE RECORDS</b><span>Illustrative data only. NEAR stores approved report digests; it does not certify environmental claims.</span><button data-action="dismiss-notice" aria-label="Dismiss notice">×</button></div>
       <section id="page-content" class="page-content" tabindex="-1"></section>
-      <footer class="workspace-footer"><span>TRIPLEES workspace</span><span>Investigate. Verify. Trace.</span><a href="index.html">Landing page ↗</a></footer>
+      <footer class="workspace-footer"><span>TRIPLEES · NEAR REPORT INTEGRITY</span><span>Evidence stays off-chain · approved digests are publicly verifiable</span><a href="index.html">Product overview ↗</a></footer>
     </main>
     <div id="modal-root"></div>
     <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
   </div>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script src="assets/js/app.js?v=workspace-design-1"></script>
+  <script src="assets/js/app.js?v=near-workspace-2"></script>
 </body>
 </html>

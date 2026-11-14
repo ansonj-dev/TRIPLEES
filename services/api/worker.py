@@ -26,7 +26,7 @@ from .app.services.agents import (
 from .app.services.ai.structured_output import FindingOutput
 from .app.services.ai.usage_tracker import usage_cost
 from .app.services.investigation_reports import create_report_snapshot, persist_agent_output
-from .app.services.agent_coordination import authorize_task_start
+from .app.services.agent_coordination import authorize_task_start, permission_allowed
 
 logger = logging.getLogger("triplees.worker")
 MAX_JOB_ATTEMPTS = 5
@@ -192,14 +192,32 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
         if row is None or row.status != "running" or row.worker_id != worker_id:
             return
         tasks = list(db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id)))
+        task_coordination_active = config.AGENT_COORDINATION_ENABLED and bool(tasks)
+        requested_task_id = row.requested_agent_task_id
+        requested_task = db.get(AgentTask, requested_task_id) if requested_task_id else None
+        if requested_task_id and (
+            requested_task is None or requested_task.investigation_id != row.id
+        ):
+            row.status = "failed"
+            row.failure_summary = "The requested agent task no longer exists in this investigation."
+            row.completed_at = utcnow()
+            row.worker_id = None
+            row.lease_expires_at = None
+            row.requested_agent_task_id = None
+            row.requested_agent_keys_json = None
+            db.commit()
+            return
         if config.AGENT_COORDINATION_ENABLED and tasks:
-            requested = json.loads(row.requested_agent_keys_json) if row.requested_agent_keys_json else None
-            if requested:
-                active_agent_keys = set(requested)
+            if requested_task is not None:
+                active_agent_keys = {requested_task.agent_id}
             else:
-                active_agent_keys = {task.agent_id for task in tasks if task.status in {
-                    "assigned", "running", "failed", "awaiting_review",
-                }}
+                requested = json.loads(row.requested_agent_keys_json) if row.requested_agent_keys_json else None
+                if requested:
+                    active_agent_keys = set(requested)
+                else:
+                    active_agent_keys = {task.agent_id for task in tasks if task.status in {
+                        "assigned", "running", "failed", "awaiting_review",
+                    }}
             agent_suite = tuple(agent for agent in agent_suite if agent.agent_key in active_agent_keys)
         context = _load_context(db, row)
         completed_keys = set(db.scalars(select(AgentExecution.agent_key).where(
@@ -221,6 +239,8 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 row.completed_at = utcnow()
                 row.lease_expires_at = None
                 row.worker_id = None
+                row.requested_agent_task_id = None
+                row.requested_agent_keys_json = None
                 for pending_task in db.scalars(select(AgentTask).where(
                     AgentTask.investigation_id == row.id,
                     AgentTask.status.in_(["assigned", "running"]),
@@ -230,16 +250,22 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 _audit(db, row.id, "investigation_cancelled")
                 db.commit()
                 return
-            if agent_cls.agent_key in completed_keys:
+            # A targeted task execution is a new unit of work even when the same
+            # agent has completed another task in this investigation.
+            if agent_cls.agent_key in completed_keys and not requested_task_id and not task_coordination_active:
                 continue
             was_budget_charged = False
-            current_task = db.scalar(select(AgentTask).where(
-                AgentTask.investigation_id == row.id,
-                AgentTask.agent_id == agent_cls.agent_key,
-                AgentTask.status.in_(["assigned", "running", "failed", "awaiting_review"]),
-            ))
+            if requested_task_id:
+                current_task = db.get(AgentTask, requested_task_id)
+            else:
+                current_task = db.scalar(select(AgentTask).where(
+                    AgentTask.investigation_id == row.id,
+                    AgentTask.agent_id == agent_cls.agent_key,
+                    AgentTask.status.in_(["assigned", "running", "failed", "awaiting_review"]),
+                ).order_by(AgentTask.priority, AgentTask.created_at).limit(1))
             was_budget_charged = current_task.budget_charged if current_task else False
-            task, task_error = authorize_task_start(db, row.id, agent_cls.agent_key)
+            task, task_error = authorize_task_start(db, row.id, agent_cls.agent_key, task_id=requested_task_id)
+            task_id_for_execution = task.id if task else None
             if task_error:
                 if task_error == "emergency_stop":
                     row.status = "cancelled"
@@ -247,6 +273,8 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                     row.completed_at = utcnow()
                     row.lease_expires_at = None
                     row.worker_id = None
+                    row.requested_agent_task_id = None
+                    row.requested_agent_keys_json = None
                     if task:
                         task.status = "cancelled"
                         task.completed_at = utcnow()
@@ -282,6 +310,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
             next_attempt = existing_attempts.attempt_number + 1 if existing_attempts else 1
             agent = agent_cls()
             execution = AgentExecution(id=_id("EXE"), investigation_id=row.id, agent_key=agent.agent_key,
+                                       task_id=task_id_for_execution,
                                        attempt_number=next_attempt, status="running", task_summary=agent.task_summary,
                                        worker_id=worker_id, started_at=utcnow())
             db.add(execution)
@@ -297,6 +326,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 with SessionLocal() as db:
                     row = db.get(Investigation, investigation_id)
                     execution = AgentExecution(id=_id("EXE"), investigation_id=row.id, agent_key=agent.agent_key,
+                                               task_id=task_id_for_execution,
                                                attempt_number=next_attempt + attempt - 1, status="running", task_summary=agent.task_summary,
                                                worker_id=worker_id, started_at=utcnow())
                     db.add(execution)
@@ -321,10 +351,16 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                                                     "requested_by": current_investigation.created_by, "used_tokens": int(daily_usage),
                                                     "limit_tokens": config.AI_DAILY_TOKEN_LIMIT}, separators=(",", ":")))
                     review_drafts = _review_drafts(budget_db, investigation_id) if agent.agent_key == "independent_review_agent" else []
+                    agent_context = replace(
+                        current_context,
+                        external_service_allowed=permission_allowed(
+                            budget_db, agent.agent_key, "external_service",
+                        ),
+                    )
                 if agent.agent_key == "independent_review_agent":
-                    result = agent.run(current_context, review_drafts)
+                    result = agent.run(agent_context, review_drafts)
                 else:
-                    result = agent.run(current_context)
+                    result = agent.run(agent_context)
             except Exception:
                 result = None
             with SessionLocal() as db:
@@ -346,10 +382,12 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 execution.completed_at = utcnow()
                 row.lease_expires_at = utcnow() + timedelta(seconds=LEASE_SECONDS)
                 row.updated_at = utcnow()
-                task = db.scalar(select(AgentTask).where(
-                    AgentTask.investigation_id == row.id,
-                    AgentTask.agent_id == agent.agent_key,
-                ))
+                task = db.get(AgentTask, task_id_for_execution) if task_id_for_execution else db.scalar(
+                    select(AgentTask).where(
+                        AgentTask.investigation_id == row.id,
+                        AgentTask.agent_id == agent.agent_key,
+                    ).order_by(AgentTask.priority, AgentTask.created_at).limit(1)
+                )
                 if task:
                     task.result_reference = execution.id
                     task.error_info = error_code
@@ -383,18 +421,31 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
             return
         if row.cancel_requested or row.status == "cancel_requested":
             row.status = "cancelled"
+            row.requested_agent_task_id = None
+            row.requested_agent_keys_json = None
             _audit(db, row.id, "investigation_cancelled")
         elif failed_any:
             row.status = "partial"
             row.failure_summary = row.failure_summary or "One or more agent tasks failed or were blocked; completed agent records were retained."
-        elif limited_any:
-            row.status = "completed_with_limitations"
         else:
-            row.status = "completed"
+            outstanding_tasks = db.scalar(select(func.count()).select_from(AgentTask).where(
+                AgentTask.investigation_id == row.id,
+                AgentTask.status.in_(["created", "available", "assigned", "running", "failed", "awaiting_review"]),
+            )) or 0
+            if outstanding_tasks:
+                row.status = "partial"
+                row.failure_summary = row.failure_summary or (
+                    f"{outstanding_tasks} agent task(s) remain assigned, failed, or awaiting reviewer approval."
+                )
+            elif limited_any:
+                row.status = "completed_with_limitations"
+            else:
+                row.status = "completed"
         row.completed_at = utcnow()
         row.lease_expires_at = None
         row.worker_id = None
         row.requested_agent_keys_json = None
+        row.requested_agent_task_id = None
         row.updated_at = utcnow()
         report = create_report_snapshot(db, row)
         _audit(db, row.id, "investigation_report_generated", {"report_id": report.id, "version": report.version, "finding_count": db.query(AgentFinding).filter_by(investigation_id=row.id).count()})
