@@ -18,8 +18,8 @@ const NAV = [
   { id: 'evidence', label: 'Evidence', icon: '▤', path: '/evidence' },
   { id: 'verification', label: 'Verification', icon: '✓', path: '/verification' },
   { id: 'conflicts', label: 'Registry Conflicts', icon: '◎', path: '/conflicts' },
-  { group: 'BLOCKCHAINS' },
-  { id: 'near-account', label: 'NEAR Account', icon: '◈', path: '/near-account' },
+  { group: 'NETWORK INTEGRITY' },
+  { id: 'near-account', label: 'NEAR Wallet & Registry', icon: '◈', path: '/near-account' },
   { id: 'marketplace', label: 'Marketplace', icon: '▣', path: '/marketplace', optional: true },
   { group: 'INSIGHTS' },
   { id: 'alerts', label: 'Alerts', icon: '♧', path: '/alerts' },
@@ -178,10 +178,24 @@ async function initializeBackend() {
     window.location.replace('auth.html');
   }
 }
+function updateNearIdentityStatus() {
+  const badge = $('#near-topbar-status');
+  if (!badge) return;
+  let label = 'NEAR TESTNET / CHECKING';
+  let state = 'checking';
+  if (nearState.accountId) { label = 'NEAR / WALLET CONNECTED'; state = 'connected'; }
+  else if (nearState.loading) { label = 'NEAR TESTNET / CHECKING'; state = 'checking'; }
+  else if (nearState.config?.enabled) { label = 'NEAR TESTNET / READY'; state = 'ready'; }
+  else { label = 'NEAR TESTNET / NOT CONFIGURED'; state = 'off'; }
+  badge.dataset.state = state;
+  badge.title = nearState.accountId ? `Connected account: ${nearState.accountId} · NEAR testnet` : (nearState.error || 'NEAR testnet wallet and report registry configuration status');
+  badge.innerHTML = `<i></i> ${label}`;
+}
 function setNearWallet(wallet, accountId = '') {
   nearState.wallet = wallet || null;
   nearState.accountId = accountId || '';
   nearState.error = '';
+  updateNearIdentityStatus();
   if (['near-account', 'investigation-reports'].includes(routeInfo().page)) renderShell();
 }
 async function setupNearConnector() {
@@ -216,6 +230,7 @@ async function initializeNearWallet() {
   } catch (error) { nearState.error = error.message || 'NEAR wallet connector could not be loaded.'; }
   finally {
     nearState.loading = false;
+    updateNearIdentityStatus();
     if (routeInfo().page === 'near-account') renderShell();
   }
 }
@@ -224,7 +239,9 @@ async function connectNearWallet() {
     if (!nearState.config) await initializeNearWallet();
     if (!nearState.config?.enabled) throw new Error(nearState.error || 'NEAR testnet is not enabled.');
     const connector = await setupNearConnector();
-    const wallet = await connector.connect();
+    await connector.connect();
+    const wallet = await connector.wallet();
+    if (!wallet) throw new Error('The wallet chooser completed but no NEAR wallet session was returned. Try connecting again.');
     const accounts = await wallet.getAccounts();
     if (!accounts[0]?.accountId) throw new Error('The connected wallet did not return an account ID.');
     setNearWallet(wallet, accounts[0].accountId);
@@ -356,6 +373,7 @@ function renderShell() {
   const content = $('#page-content');
   content.removeAttribute('aria-busy');
   content.innerHTML = renderPage(page, objectId);
+  updateNearIdentityStatus();
   prepareDataViews(content);
   $$('.nav-link').forEach((link) => { if (link.classList.contains('active')) link.setAttribute('aria-current', 'page'); else link.removeAttribute('aria-current'); });
   if (window.lucide) window.lucide.createIcons();
@@ -368,7 +386,7 @@ function renderPage(page, objectId) {
   return (pages[page] || notFoundPage)(objectId);
 }
 function pageHeader(title, subtitle, action = '') {
-  return `<div class="page-head"><div><p class="eyebrow">TRIPLEES WORKSPACE</p><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions">${action}</div></div>`;
+  return `<div class="page-head"><div><p class="eyebrow">TRIPLEES / NEAR-INTEGRATED EVIDENCE WORKSPACE</p><h1>${title}</h1><p>${subtitle}</p></div><div class="page-actions">${action}</div></div>`;
 }
 function cardTitle(title, subtitle = '', action = '') {
   return `<div class="card-title"><div><h2>${title}</h2>${subtitle ? `<p>${subtitle}</p>` : ''}</div>${action}</div>`;
@@ -627,11 +645,18 @@ function nearAccountPage() {
   const historyContent = nearState.historyLoading
     ? '<div class="workspace-loading" role="status"><span class="loading-indicator"></span><p>Loading commitment history…</p></div>'
     : history || emptyMini('No NEAR report commitments yet.', 'Reviewer-approved report digests will appear here after wallet submission.');
-  return `${pageHeader('NEAR Account', 'Connect a testnet wallet to sign reviewer-approved report commitments.', '')}
-    <section class="card card-pad near-account-panel">${cardTitle('Wallet connection', 'NEAR testnet only', accountControl)}
-      <div class="near-account-fields"><div><small>Account</small><strong>${escapeHtml(nearState.accountId || 'Disconnected')}</strong></div><div><small>Network</small><strong>${escapeHtml(network)}</strong></div><div><small>Registry contract</small><strong>${escapeHtml(config?.contract_id || 'Not configured')}</strong></div><div><small>Commitment status</small><strong>${config?.report_commitments_enabled ? 'Enabled' : 'Unavailable'}</strong></div></div>
+  return `${pageHeader('NEAR Wallet & Registry', 'The NEAR wallet is used by an authorized reviewer to sign report-integrity commitments. It is separate from your TRIPLEES login.', '')}
+    <section class="near-account-hero">
+      <span class="n-mono">NEAR PROTOCOL / REPORT INTEGRITY</span>
+      <h2>Connect a reviewer wallet. Verify a specific report version.</h2>
+      <p>TRIPLEES does the evidence work off-chain. After a human reviewer approves a report, its canonical SHA-256 digest can be committed to the NEAR testnet registry. The public verifier can then check whether a downloaded report is byte-for-byte the version that was committed.</p>
+      <div class="near-account-steps"><div><b>01 / CONNECT</b><small>Choose a NEAR testnet wallet. Your app login and wallet account remain separate.</small></div><div><b>02 / SIGN</b><small>A reviewer-approved report digest is signed in your wallet. TRIPLEES never holds the key.</small></div><div><b>03 / VERIFY</b><small>Anyone can compare the exact report file with the public registry commitment.</small></div></div>
+    </section>
+    <section class="card card-pad near-account-panel">${cardTitle('Wallet connection', 'NEAR testnet · browser wallet signs each transaction', accountControl)}
+      <div class="near-account-fields"><div><small>Account</small><strong>${escapeHtml(nearState.accountId || 'Disconnected')}</strong></div><div><small>Network</small><strong>${escapeHtml(network)}</strong></div><div><small>Registry contract</small><strong>${escapeHtml(config?.contract_id || 'Not configured')}</strong></div><div><small>Report commitments</small><strong>${config?.report_commitments_enabled ? 'Enabled' : 'Unavailable'}</strong></div></div>
       ${nearState.error ? `<p class="callout ${config?.enabled ? 'warning' : 'info'}">${escapeHtml(nearState.error)}</p>` : ''}
-      <p class="tiny muted">TRIPLEES never requests or stores seed phrases or private keys. The wallet signs each report transaction directly. NEAR commitments are separate from X1 EcoChain.</p>
+      ${!config?.enabled ? '<p class="callout info">NEAR wallet connection is currently disabled by server configuration. Set the NEAR testnet feature flags and a deployed registry contract ID before enabling wallet actions.</p>' : ''}
+      <p class="tiny muted">Never enter a seed phrase or private key into TRIPLEES. The wallet is opened only when you choose Connect, and transaction approval remains in the wallet. NEAR commitments are separate from X1 EcoChain.</p>
     </section>
     <section class="card card-pad section-space">${cardTitle('Report commitment history', `${nearState.history.length} saved record(s)`)}${historyContent}</section>`;
 }
@@ -657,6 +682,7 @@ function dashboardPage() {
   const pending = db.evidence.filter((e) => e.state === 'Needs human review' || e.state === 'Assessment ready').length;
   return `${pageHeader('Workspace overview', 'Project provenance, credit balances, and the work that needs your attention.', `<a class="btn" href="#/reports">${uiIcon('download', '↓')} Reports</a><a class="btn btn-primary" href="#/new">${uiIcon('plus', '+')} New project</a>`)}
     <section class="workspace-summary"><div class="summary-copy"><span class="summary-kicker">CLIMATE INTEGRITY / DEMO WORKSPACE</span><h2>Portfolio status</h2><p>${atRisk ? `${atRisk} at-risk ${atRisk === 1 ? 'batch needs' : 'batches need'} a closer look.` : 'No at-risk batches in this workspace.'} ${openReviews + pending} items awaiting human review.</p><a href="#/verification" class="summary-action">Open review queue ${uiIcon('arrow-up-right', '↗')}</a></div><div class="summary-image" role="img" aria-label="Forest canopy in the demo workspace"></div></section>
+    <section class="near-product-card"><div><span class="n-mono">WHY NEAR / THE PUBLIC INTEGRITY LAYER</span><h2>Approved reports can be verified outside this workspace.</h2><p>NEAR records a versioned SHA-256 digest after human review. Original evidence, private documents and full report contents remain off-chain. The connected reviewer wallet signs; the public verifier checks the exact report file.</p></div><div class="near-product-action"><small>NEAR TESTNET / REPORT REGISTRY</small><a href="#/near-account">Explore wallet &amp; registry <span aria-hidden="true">↗</span></a><small>${nearState.accountId ? 'WALLET CONNECTED' : (nearState.config?.enabled ? 'WALLET READY' : 'CONFIGURATION REQUIRED')}</small></div></section>
     <div class="metric-grid">
       ${metricCard('My Projects', db.projects.length, 'Synthetic workspace records', '▧')}
       ${metricCard('Credits Owned', formatTonnes(owned), 'Available demo balance', '◈')}
