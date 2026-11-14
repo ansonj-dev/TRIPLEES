@@ -1,26 +1,22 @@
 services:
   - type: web
-    name: triplees-web
+    name: triplees-free
     runtime: python
-    plan: starter
+    plan: free
     region: singapore
     branch: main
     buildCommand: pip install -r services/api/requirements.txt
-    startCommand: python -m uvicorn services.api.app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: python -m services.api.run_render
     healthCheckPath: /api/health
-    disk:
-      name: triplees-evidence
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: APP_ENV
         value: development
       - key: DATABASE_URL
         fromDatabase:
-          name: triplees-db
+          name: triplees-free-db
           property: connectionString
       - key: VERICARB_DATA_DIR
-        value: /var/data
+        value: /tmp/triplees-data
       - key: VERICARB_TOKEN_SECRET
         generateValue: true
       - key: AUTO_MIGRATE
@@ -47,48 +43,10 @@ services:
         value: nvidia/nemotron-3-super-120b-a12b
       - key: AI_DAILY_TOKEN_LIMIT
         value: "100000"
-  - type: worker
-    name: triplees-worker
-    runtime: python
-    plan: starter
-    region: singapore
-    branch: main
-    buildCommand: pip install -r services/api/requirements.txt
-    startCommand: python -m services.api.worker --poll-seconds 2
-    envVars:
-      - key: APP_ENV
-        value: development
-      - key: DATABASE_URL
-        fromDatabase:
-          name: triplees-db
-          property: connectionString
-      - key: VERICARB_DATA_DIR
-        value: /var/data
-      - key: VERICARB_TOKEN_SECRET
-        fromService:
-          type: web
-          name: triplees-web
-          envVarKey: VERICARB_TOKEN_SECRET
-      - key: AUTO_MIGRATE
-        value: "false"
-      - key: SEED_DEMO_DATA
-        value: "false"
-      - key: AI_PROVIDER
-        value: nebius_token_factory
-      - key: NEBIUS_MODEL
-        value: nvidia/nemotron-3-super-120b-a12b
-      - key: AI_DAILY_TOKEN_LIMIT
-        value: "100000"
-      - key: NEAR_NETWORK
-        value: testnet
-      - key: NEAR_ENABLED
-        value: "true"
-      - key: NEAR_REPORT_COMMITMENTS_ENABLED
-        value: "false"
 databases:
-  - name: triplees-db
+  - name: triplees-free-db
     databaseName: triplees
     user: triplees
-    plan: basic-256mb
+    plan: free
     region: singapore
     postgresMajorVersion: "16"
