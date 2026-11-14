@@ -185,6 +185,7 @@ function updateNearIdentityStatus() {
   let state = 'checking';
   if (nearState.accountId) { label = 'NEAR / WALLET CONNECTED'; state = 'connected'; }
   else if (nearState.loading) { label = 'NEAR TESTNET / CHECKING'; state = 'checking'; }
+  else if (nearState.config?.enabled && nearState.error) { label = 'NEAR TESTNET / WALLET ERROR'; state = 'error'; }
   else if (nearState.config?.enabled) { label = 'NEAR TESTNET / READY'; state = 'ready'; }
   else { label = 'NEAR TESTNET / NOT CONFIGURED'; state = 'off'; }
   badge.dataset.state = state;
