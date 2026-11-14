@@ -57,6 +57,17 @@ AI_MAX_COMPLETION_TOKENS = max(64, min(int(os.getenv("AI_MAX_COMPLETION_TOKENS",
 AI_DAILY_TOKEN_LIMIT = max(0, int(os.getenv("AI_DAILY_TOKEN_LIMIT", "100000")))
 AI_INPUT_COST_PER_MILLION_USD = os.getenv("AI_INPUT_COST_PER_MILLION_USD", "").strip()
 AI_OUTPUT_COST_PER_MILLION_USD = os.getenv("AI_OUTPUT_COST_PER_MILLION_USD", "").strip()
+NEAR_ENABLED = os.getenv("NEAR_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+NEAR_REPORT_COMMITMENTS_ENABLED = os.getenv("NEAR_REPORT_COMMITMENTS_ENABLED", "false").strip().lower() in {"1", "true", "yes"}
+NEAR_NETWORK = os.getenv("NEAR_NETWORK", "testnet").strip().lower()
+NEAR_RPC_URL = os.getenv("NEAR_RPC_URL", "https://rpc.testnet.near.org").strip().rstrip("/")
+NEAR_WALLET_URL = os.getenv("NEAR_WALLET_URL", "https://testnet.mynearwallet.com").strip().rstrip("/")
+NEAR_EXPLORER_URL = os.getenv("NEAR_EXPLORER_URL", "https://explorer.testnet.near.org").strip().rstrip("/")
+NEAR_REPORT_REGISTRY_CONTRACT_ID = os.getenv("NEAR_REPORT_REGISTRY_CONTRACT_ID", "").strip().lower()
+NEAR_RPC_TIMEOUT_SECONDS = max(3, min(int(os.getenv("NEAR_RPC_TIMEOUT_SECONDS", "15")), 60))
+AGENT_COORDINATION_ENABLED = os.getenv("AGENT_COORDINATION_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+AGENT_BIDDING_ENABLED = os.getenv("AGENT_BIDDING_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
+AGENT_BUDGETS_ENABLED = os.getenv("AGENT_BUDGETS_ENABLED", "true").strip().lower() in {"1", "true", "yes"}
 
 if not OBJECT_STORAGE_BUCKET:
     DATA_DIR.mkdir(parents=True, exist_ok=True)

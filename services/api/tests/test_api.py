@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import hashlib
 import uuid
 from datetime import timedelta
@@ -615,3 +616,302 @@ def test_document_extraction_preserves_csv_json_and_pdf_locations(isolated_backe
             files={"file": ("invalid.json", b"{bad", "application/json")},
         )
         assert bad_json.status_code == 422
+
+
+def _create_near_report(client):
+    from services.api.app.models import InvestigationReport
+
+    auth = client.post("/api/auth/demo").json()
+    headers = {"Authorization": f"Bearer {auth['access_token']}"}
+    project = client.post("/api/projects", headers=headers, json={
+        "name": "NEAR commitment test", "project_type": "forest", "country": "Kenya",
+    }).json()
+    investigation = client.post("/api/investigations", headers=headers, json={
+        "project_id": project["id"], "title": "Report integrity check", "scope": "Check the saved report digest.",
+    }).json()
+    report = InvestigationReport(
+        id=f"RPT-{uuid.uuid4().hex[:12]}", investigation_id=investigation["id"], version=1,
+        status="completed", summary="One finding requires review.",
+        content_json=json.dumps({"investigation": {"id": investigation["id"]}, "findings": []}),
+        limitations_json="[]", created_by=auth["user"]["id"], created_at=utcnow(),
+    )
+    with app_db.SessionLocal() as db:
+        db.add(report)
+        db.commit()
+    return headers, investigation, report
+
+
+def _enable_near_testnet(monkeypatch):
+    monkeypatch.setattr(app_config, "NEAR_ENABLED", True)
+    monkeypatch.setattr(app_config, "NEAR_NETWORK", "testnet")
+    monkeypatch.setattr(app_config, "NEAR_REPORT_COMMITMENTS_ENABLED", True)
+    monkeypatch.setattr(app_config, "NEAR_REPORT_REGISTRY_CONTRACT_ID", "reports.testnet")
+
+
+def test_near_report_commitment_is_pending_until_rpc_confirms_it(isolated_backend, monkeypatch):
+    from services.api.app import near_routes
+    from services.api.app.services.report_anchoring import report_sha256
+
+    _enable_near_testnet(monkeypatch)
+    states = iter(["pending", "confirmed"])
+    verified = []
+
+    class FakeNearChain:
+        def verify_report_transaction(self, transaction_hash, account_id, contract_id, expected):
+            verified.append((transaction_hash, account_id, contract_id, expected))
+            return next(states)
+
+    monkeypatch.setattr(near_routes, "NearChainClient", FakeNearChain)
+    transaction_hash = "1" * 44
+    with TestClient(app) as client:
+        headers, investigation, report = _create_near_report(client)
+        prepared = client.post("/api/near/commitments/prepare", headers=headers, json={
+            "report_id": report.id, "near_account_id": "reviewer.testnet",
+            "reason": "I reviewed this final report digest.",
+        })
+        assert prepared.status_code == 201
+        payload = prepared.json()
+        assert payload["status"] == "pending"
+        assert payload["sha256"] == report_sha256(report)
+        assert payload["transaction"]["receiver_id"] == "reports.testnet"
+        assert payload["transaction"]["args"]["investigation_id"] == investigation["id"]
+
+        pending = client.post(
+            f"/api/near/commitments/{payload['id']}/confirm", headers=headers,
+            json={"transaction_hash": transaction_hash},
+        )
+        assert pending.status_code == 202
+        assert pending.json()["status"] == "pending"
+        confirmed = client.post(
+            f"/api/near/commitments/{payload['id']}/confirm", headers=headers,
+            json={"transaction_hash": transaction_hash},
+        )
+        assert confirmed.status_code == 200
+        assert confirmed.json()["status"] == "confirmed"
+        assert confirmed.json()["confirmed_at"]
+        assert verified[0][3]["report_digest"] == report_sha256(report)
+        listed = client.get(f"/api/near/commitments/{investigation['id']}", headers=headers)
+        assert listed.json()["items"][0]["status"] == "confirmed"
+
+
+def test_near_commitment_requires_reviewer_and_testnet(isolated_backend, monkeypatch):
+    _enable_near_testnet(monkeypatch)
+    with TestClient(app) as client:
+        headers, _, report = _create_near_report(client)
+        developer = client.post("/api/auth/signup", json={
+            "display_name": "NEAR test user", "email": f"near-{uuid.uuid4().hex}@example.invalid",
+            "password": "A-Long-Enough-Test-Passphrase!",
+        }).json()
+        denied = client.post("/api/near/commitments/prepare", headers={
+            "Authorization": f"Bearer {developer['access_token']}"
+        }, json={
+            "report_id": report.id, "near_account_id": "reviewer.testnet", "reason": "Not a reviewer.",
+        })
+        assert denied.status_code == 403
+        monkeypatch.setattr(app_config, "NEAR_NETWORK", "mainnet")
+        wrong_network = client.post("/api/near/commitments/prepare", headers=headers, json={
+            "report_id": report.id, "near_account_id": "reviewer.testnet", "reason": "Testnet must be enforced.",
+        })
+        assert wrong_network.status_code == 503
+        invalid_account = client.post("/api/near/commitments/prepare", headers=headers, json={
+            "report_id": report.id, "near_account_id": "Reviewer.testnet", "reason": "Invalid case is rejected.",
+        })
+        assert invalid_account.status_code == 422
+        invalid_hash = client.post("/api/near/commitments/missing/confirm", headers=headers, json={
+            "transaction_hash": "0" * 44,
+        })
+        assert invalid_hash.status_code == 422
+
+
+def test_public_near_verification_rehashes_the_supplied_report(isolated_backend, monkeypatch):
+    from services.api.app import near_routes
+    from services.api.app.models import NearCommitment
+    from services.api.app.services.report_anchoring import report_sha256
+
+    _enable_near_testnet(monkeypatch)
+    with TestClient(app) as client:
+        _, investigation, report = _create_near_report(client)
+        report_document = {
+            "id": report.id, "version": report.version, "status": report.status,
+            "summary": report.summary, "limitations": [], "content": json.loads(report.content_json),
+            "created_at": report.created_at.isoformat(),
+        }
+        digest = report_sha256(report)
+        record = {
+            "investigationId": investigation["id"], "reportVersion": report.version,
+            "reportDigest": digest, "metadataDigest": None, "submitter": "reviewer.testnet",
+        }
+
+        class FakeNearChain:
+            def get_report_commitment(self, contract_id, investigation_id, report_version):
+                assert contract_id == "reports.testnet"
+                assert investigation_id == investigation["id"]
+                assert report_version == 1
+                return record
+
+        monkeypatch.setattr(near_routes, "NearChainClient", FakeNearChain)
+        with app_db.SessionLocal() as db:
+            db.add(NearCommitment(
+                id="NRC-PUBLIC-TEST", investigation_id=investigation["id"], report_id=report.id,
+                report_version=1, report_digest=digest, near_account_id="reviewer.testnet",
+                contract_id="reports.testnet", approved_by="demo-reviewer",
+                approval_reason="Reviewed for public integrity verification.", approved_at=utcnow(),
+                transaction_hash="1" * 44, network="testnet", status="confirmed",
+                created_at=utcnow(), confirmed_at=utcnow(),
+            ))
+            db.commit()
+
+        valid = client.post("/api/public/near/commitments/NRC-PUBLIC-TEST/verify", json={"report": report_document})
+        assert valid.status_code == 200
+        assert valid.json()["result"] == "VERIFIED"
+        assert valid.json()["digest_matches"] is True
+        altered = {**report_document, "summary": "A changed report."}
+        mismatch = client.post("/api/public/near/commitments/NRC-PUBLIC-TEST/verify", json={"report": altered})
+        assert mismatch.status_code == 200
+        assert mismatch.json()["result"] == "MISMATCH"
+        assert mismatch.json()["digest_matches"] is False
+        public_record = client.get("/api/public/near/commitments/NRC-PUBLIC-TEST").json()
+        assert "report_id" not in public_record
+        assert "approval_reason" not in public_record
+
+
+def test_near_rpc_confirmation_checks_signed_transaction_and_state(monkeypatch):
+    import base64
+
+    from services.api.app.services.near_chain import NearChainClient, NearTransactionMismatch
+
+    monkeypatch.setattr(app_config, "NEAR_NETWORK", "testnet")
+    monkeypatch.setattr(app_config, "NEAR_RPC_URL", "https://rpc.testnet.near.org")
+    account_id = "reviewer.testnet"
+    contract_id = "reports.testnet"
+    expected = {"investigation_id": "INV-42", "report_version": 2, "report_digest": "ab" * 32}
+    arguments = {**expected, "metadata_digest": None}
+    record = {
+        "investigationId": expected["investigation_id"], "reportVersion": expected["report_version"],
+        "reportDigest": expected["report_digest"], "metadataDigest": None,
+        "submitter": account_id, "committedAtNs": 123,
+    }
+    transaction = {
+        "signer_id": account_id, "receiver_id": contract_id,
+        "actions": [{"FunctionCall": {
+            "method_name": "commit_report",
+            "args": base64.b64encode(json.dumps(arguments).encode()).decode(),
+        }}],
+    }
+    client = NearChainClient()
+
+    def rpc(method, _params):
+        if method == "status":
+            return {"chain_id": "testnet"}
+        if method == "EXPERIMENTAL_tx_status":
+            return {"final_execution_outcome": {"transaction": transaction, "status": {"SuccessValue": ""}}}
+        if method == "query":
+            return {"result": list(json.dumps(record).encode())}
+        raise AssertionError(f"Unexpected NEAR RPC method: {method}")
+
+    monkeypatch.setattr(client, "_rpc", rpc)
+    assert client.verify_report_transaction("1" * 44, account_id, contract_id, expected) == "confirmed"
+    transaction["signer_id"] = "other.testnet"
+    try:
+        client.verify_report_transaction("1" * 44, account_id, contract_id, expected)
+    except NearTransactionMismatch:
+        pass
+    else:
+        raise AssertionError("A transaction signed by another NEAR account must be rejected.")
+
+
+def test_agent_coordination_bids_budget_permissions_and_task_execution(isolated_backend):
+    from services.api.app.models import AgentAuditEvent, AgentBudget, AgentTask, InvestigationBudget
+    from services.api.app.services.ai.structured_output import AgentOutput
+    from services.api.app.services.agents.common import AgentExecutionResult
+    from services.api.worker import claim_next_job, process_job
+    from sqlalchemy import select
+
+    with TestClient(app) as client:
+        headers, investigation, _ = _create_near_report(client)
+        plan = client.post("/api/agents/tasks", headers=headers, json={"investigation_id": investigation["id"]})
+        assert plan.status_code == 201
+        tasks = plan.json()["items"]
+        assert len(tasks) == 5
+        evidence_task = next(task for task in tasks if task["task_type"] == "evidence_analysis")
+        assert evidence_task["agent_id"] == "evidence_analyst"
+        assert sum(bid["selection_status"] == "selected" for bid in evidence_task["bids"]) == 1
+        assert plan.json()["budget"]["unit"] == "internal_units"
+        assert plan.json()["budget"]["allocated_amount"] <= plan.json()["budget"]["budget_limit"]
+
+        threshold = client.post("/api/agents/budgets", headers=headers, json={
+            "investigation_id": investigation["id"], "budget_limit": 10,
+            "approval_threshold": 0.5, "agent_limits": {agent: 2 for agent in (
+                "evidence_analyst", "integrity_analyst", "research_investigator",
+                "monitoring_analyst", "independent_review_agent",
+            )},
+        })
+        assert threshold.status_code == 200
+        held = client.get(f"/api/agents/tasks/{evidence_task['id']}", headers=headers).json()
+        assert held["status"] == "awaiting_review"
+        assert client.post(f"/api/agents/tasks/{evidence_task['id']}/execute", headers=headers).status_code == 409
+
+        approved = client.post(f"/api/agents/budgets/{investigation['id']}/approve", headers=headers, json={
+            "task_id": evidence_task["id"], "reason": "I approve this bounded internal task allocation.",
+        })
+        assert approved.status_code == 200
+        denied_permission = client.post("/api/agents/permissions", headers=headers, json={
+            "agent_id": "evidence_analyst", "permission": "execute", "allowed": False,
+        })
+        assert denied_permission.status_code == 200
+        denied = client.post(f"/api/agents/tasks/{evidence_task['id']}/execute", headers=headers)
+        assert denied.status_code == 403
+        restored_permission = client.post("/api/agents/permissions", headers=headers, json={
+            "agent_id": "evidence_analyst", "permission": "execute", "allowed": True,
+        })
+        assert restored_permission.status_code == 200
+        assert len(restored_permission.json()["history"]) == 2
+
+        frozen = client.post(f"/api/agents/budgets/{investigation['id']}/freeze", headers=headers, json={
+            "frozen": True, "emergency_stop": True, "reason": "Stop work before the next task starts.",
+        })
+        assert frozen.status_code == 200 and frozen.json()["emergency_stop"] is True
+        assert client.post(f"/api/agents/tasks/{evidence_task['id']}/execute", headers=headers).status_code == 409
+        client.post(f"/api/agents/budgets/{investigation['id']}/freeze", headers=headers, json={
+            "frozen": False, "emergency_stop": False, "reason": "Reviewer cleared the emergency stop.",
+        })
+
+        class FakeEvidenceAgent:
+            agent_key = "evidence_analyst"
+            task_summary = "Persist a deterministic test output."
+
+            def run(self, _context):
+                return AgentExecutionResult(self.agent_key, "completed", self.task_summary, AgentOutput(summary="Test task completed."))
+
+        queued = client.post(f"/api/agents/tasks/{evidence_task['id']}/execute", headers=headers)
+        assert queued.status_code == 202
+        worker_id = "coordination-test-worker"
+        assert claim_next_job(worker_id) == investigation["id"]
+        process_job(investigation["id"], worker_id, (FakeEvidenceAgent,))
+        completed = client.get(f"/api/agents/tasks/{evidence_task['id']}", headers=headers).json()
+        assert completed["status"] == "completed"
+        assert completed["result_reference"]
+        current_budget = client.get(f"/api/agents/budgets/{investigation['id']}", headers=headers).json()
+        assert current_budget["spent_amount"] == completed["budget_spent"]
+        with app_db.SessionLocal() as db:
+            assert db.get(AgentTask, evidence_task["id"]).budget_charged is True
+            assert db.scalar(select(AgentBudget.spent_amount).where(
+                AgentBudget.investigation_id == investigation["id"], AgentBudget.agent_id == "evidence_analyst",
+            )) == completed["budget_spent"]
+            assert db.query(AgentAuditEvent).filter_by(investigation_id=investigation["id"], event_type="agent_task_internal_budget_charged").count() == 1
+            saved_budget = db.scalar(select(InvestigationBudget).where(InvestigationBudget.investigation_id == investigation["id"]))
+            assert saved_budget is not None
+
+
+def test_bidding_flag_keeps_primary_agent_assignment(isolated_backend, monkeypatch):
+    from services.api.app import config
+
+    monkeypatch.setattr(config, "AGENT_BIDDING_ENABLED", False)
+    with TestClient(app) as client:
+        headers, investigation, _ = _create_near_report(client)
+        plan = client.post("/api/agents/tasks", headers=headers, json={"investigation_id": investigation["id"]})
+        assert plan.status_code == 201
+        tasks = plan.json()["items"]
+        assert len(tasks) == 5
+        assert all(task["bids"] == [] for task in tasks)
+        assert all(task["status"] == "assigned" for task in tasks)

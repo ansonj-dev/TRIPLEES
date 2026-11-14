@@ -15,8 +15,9 @@ from sqlalchemy import func, select, update
 from .app import config
 from .app.db import SessionLocal
 from .app.models import (
-    AgentAuditEvent, AgentExecution, AgentFinding, DocumentExtraction, EvidenceFile, ExtractedClaim,
-    Investigation, ModelUsage, MonitoringObservation, Project, RegistryRecord, SourceReference, utcnow,
+    AgentAuditEvent, AgentBudget, AgentExecution, AgentFinding, AgentTask, DocumentExtraction,
+    EvidenceFile, ExtractedClaim, Investigation, InvestigationBudget, ModelUsage,
+    MonitoringObservation, Project, RegistryRecord, SourceReference, utcnow,
 )
 from .app.services.agents import (
     AgentContext, EvidenceAnalyst, IndependentReviewAgent, IntegrityAnalyst,
@@ -25,6 +26,7 @@ from .app.services.agents import (
 from .app.services.ai.structured_output import FindingOutput
 from .app.services.ai.usage_tracker import usage_cost
 from .app.services.investigation_reports import create_report_snapshot, persist_agent_output
+from .app.services.agent_coordination import authorize_task_start
 
 logger = logging.getLogger("triplees.worker")
 MAX_JOB_ATTEMPTS = 5
@@ -189,6 +191,16 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
         row = db.get(Investigation, investigation_id)
         if row is None or row.status != "running" or row.worker_id != worker_id:
             return
+        tasks = list(db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id)))
+        if config.AGENT_COORDINATION_ENABLED and tasks:
+            requested = json.loads(row.requested_agent_keys_json) if row.requested_agent_keys_json else None
+            if requested:
+                active_agent_keys = set(requested)
+            else:
+                active_agent_keys = {task.agent_id for task in tasks if task.status in {
+                    "assigned", "running", "failed", "awaiting_review",
+                }}
+            agent_suite = tuple(agent for agent in agent_suite if agent.agent_key in active_agent_keys)
         context = _load_context(db, row)
         completed_keys = set(db.scalars(select(AgentExecution.agent_key).where(
             AgentExecution.investigation_id == row.id,
@@ -209,11 +221,63 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 row.completed_at = utcnow()
                 row.lease_expires_at = None
                 row.worker_id = None
+                for pending_task in db.scalars(select(AgentTask).where(
+                    AgentTask.investigation_id == row.id,
+                    AgentTask.status.in_(["assigned", "running"]),
+                )):
+                    pending_task.status = "cancelled"
+                    pending_task.completed_at = utcnow()
                 _audit(db, row.id, "investigation_cancelled")
                 db.commit()
                 return
             if agent_cls.agent_key in completed_keys:
                 continue
+            was_budget_charged = False
+            current_task = db.scalar(select(AgentTask).where(
+                AgentTask.investigation_id == row.id,
+                AgentTask.agent_id == agent_cls.agent_key,
+                AgentTask.status.in_(["assigned", "running", "failed", "awaiting_review"]),
+            ))
+            was_budget_charged = current_task.budget_charged if current_task else False
+            task, task_error = authorize_task_start(db, row.id, agent_cls.agent_key)
+            if task_error:
+                if task_error == "emergency_stop":
+                    row.status = "cancelled"
+                    row.cancel_requested = True
+                    row.completed_at = utcnow()
+                    row.lease_expires_at = None
+                    row.worker_id = None
+                    if task:
+                        task.status = "cancelled"
+                        task.completed_at = utcnow()
+                        task.error_info = "Emergency stop halted work between agent executions."
+                    for pending_task in db.scalars(select(AgentTask).where(
+                        AgentTask.investigation_id == row.id,
+                        AgentTask.status.in_(["assigned", "running"]),
+                    )):
+                        pending_task.status = "cancelled"
+                        pending_task.completed_at = utcnow()
+                    _audit(db, row.id, "agent_emergency_stop_halted_execution", {"agent_id": agent_cls.agent_key})
+                    db.commit()
+                    return
+                if task:
+                    if task_error != "review_approval_required":
+                        task.status = "failed"
+                        task.completed_at = utcnow()
+                    task.error_info = task_error
+                row.failure_summary = "One or more agent tasks were blocked by permissions or budget controls."
+                _audit(db, row.id, "agent_task_execution_blocked", {
+                    "agent_id": agent_cls.agent_key, "task_id": task.id if task else None,
+                    "reason": task_error,
+                })
+                failed_any = True
+                db.commit()
+                continue
+            if task and config.AGENT_BUDGETS_ENABLED and not was_budget_charged and task.budget_charged and task.budget_spent > 0:
+                _audit(db, row.id, "agent_task_internal_budget_charged", {
+                    "task_id": task.id, "agent_id": agent_cls.agent_key,
+                    "amount": task.budget_spent, "unit": "internal_units",
+                })
             existing_attempts = db.scalar(select(AgentExecution).where(AgentExecution.investigation_id == row.id, AgentExecution.agent_key == agent_cls.agent_key).order_by(AgentExecution.attempt_number.desc()).limit(1))
             next_attempt = existing_attempts.attempt_number + 1 if existing_attempts else 1
             agent = agent_cls()
@@ -282,6 +346,19 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 execution.completed_at = utcnow()
                 row.lease_expires_at = utcnow() + timedelta(seconds=LEASE_SECONDS)
                 row.updated_at = utcnow()
+                task = db.scalar(select(AgentTask).where(
+                    AgentTask.investigation_id == row.id,
+                    AgentTask.agent_id == agent.agent_key,
+                ))
+                if task:
+                    task.result_reference = execution.id
+                    task.error_info = error_code
+                    final_attempt = status != "failed" or attempt >= AGENT_ATTEMPTS
+                    if final_attempt:
+                        task.status = "completed" if status in {"completed", "completed_with_limitations"} else "failed"
+                        task.completed_at = utcnow()
+                    else:
+                        task.status = "running"
                 _audit(db, row.id, "agent_execution_completed" if status != "failed" else "agent_execution_failed",
                        {"agent_key": agent.agent_key, "status": status, "error_code": error_code}, execution.id)
                 db.commit()
@@ -309,7 +386,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
             _audit(db, row.id, "investigation_cancelled")
         elif failed_any:
             row.status = "partial"
-            row.failure_summary = "One or more agents failed after retry; completed agent records were retained."
+            row.failure_summary = row.failure_summary or "One or more agent tasks failed or were blocked; completed agent records were retained."
         elif limited_any:
             row.status = "completed_with_limitations"
         else:
@@ -317,6 +394,7 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
         row.completed_at = utcnow()
         row.lease_expires_at = None
         row.worker_id = None
+        row.requested_agent_keys_json = None
         row.updated_at = utcnow()
         report = create_report_snapshot(db, row)
         _audit(db, row.id, "investigation_report_generated", {"report_id": report.id, "version": report.version, "finding_count": db.query(AgentFinding).filter_by(investigation_id=row.id).count()})

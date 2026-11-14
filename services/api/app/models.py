@@ -342,6 +342,7 @@ class Investigation(Base):
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lease_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     worker_id: Mapped[str | None] = mapped_column(String(100))
+    requested_agent_keys_json: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -364,6 +365,102 @@ class AgentExecution(Base):
     worker_id: Mapped[str | None] = mapped_column(String(100))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class InvestigationBudget(Base):
+    __tablename__ = "investigation_budgets"
+    __table_args__ = (
+        UniqueConstraint("investigation_id", name="uq_investigation_budget_investigation"),
+        CheckConstraint("budget_limit >= 0 AND allocated_amount >= 0 AND spent_amount >= 0", name="ck_investigation_budget_nonnegative"),
+    )
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    investigation_id: Mapped[str] = mapped_column(ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
+    budget_limit: Mapped[float] = mapped_column(Float, nullable=False)
+    allocated_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    spent_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    unit: Mapped[str] = mapped_column(String(40), nullable=False, default="internal_units")
+    approval_threshold: Mapped[float] = mapped_column(Float, nullable=False, default=1)
+    frozen: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    emergency_stop: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class AgentBudget(Base):
+    __tablename__ = "agent_budgets"
+    __table_args__ = (
+        UniqueConstraint("investigation_id", "agent_id", name="uq_agent_budget_investigation_agent"),
+        CheckConstraint("budget_limit >= 0 AND allocated_amount >= 0 AND spent_amount >= 0", name="ck_agent_budget_nonnegative"),
+    )
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    investigation_id: Mapped[str] = mapped_column(ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    budget_limit: Mapped[float] = mapped_column(Float, nullable=False)
+    allocated_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    spent_amount: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    unit: Mapped[str] = mapped_column(String(40), nullable=False, default="internal_units")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class AgentPermission(Base):
+    __tablename__ = "agent_permissions"
+    __table_args__ = (UniqueConstraint("agent_id", "permission", name="uq_agent_permission_agent_permission"),)
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    permission: Mapped[str] = mapped_column(String(64), nullable=False)
+    allowed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    change_history_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    updated_by: Mapped[str | None] = mapped_column(ForeignKey("profiles.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class AgentTask(Base):
+    __tablename__ = "agent_tasks"
+    __table_args__ = (
+        UniqueConstraint("investigation_id", "task_type", name="uq_agent_task_investigation_type"),
+        CheckConstraint("priority BETWEEN 1 AND 5", name="ck_agent_task_priority"),
+        CheckConstraint("budget_allocated >= 0 AND budget_spent >= 0", name="ck_agent_task_budget_nonnegative"),
+        CheckConstraint("status IN ('created', 'available', 'assigned', 'running', 'completed', 'failed', 'cancelled', 'awaiting_review')", name="ck_agent_task_status"),
+    )
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    investigation_id: Mapped[str] = mapped_column(ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
+    task_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    agent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    required_input_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    expected_output_schema: Mapped[str] = mapped_column(String(120), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="created", index=True)
+    priority: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    budget_allocated: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    budget_spent: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    budget_charged: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    approved_by: Mapped[str | None] = mapped_column(ForeignKey("profiles.id"))
+    approval_reason: Mapped[str | None] = mapped_column(Text)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    result_reference: Mapped[str | None] = mapped_column(ForeignKey("agent_executions.id", ondelete="SET NULL"))
+    error_info: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AgentBid(Base):
+    __tablename__ = "agent_bids"
+    __table_args__ = (
+        UniqueConstraint("task_id", "agent_id", name="uq_agent_bid_task_agent"),
+        CheckConstraint("estimated_cost >= 0 AND estimated_duration_seconds >= 0", name="ck_agent_bid_estimates_nonnegative"),
+        CheckConstraint("capability_score BETWEEN 0 AND 1 AND reliability_score BETWEEN 0 AND 1", name="ck_agent_bid_scores_range"),
+    )
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    task_id: Mapped[str] = mapped_column(ForeignKey("agent_tasks.id", ondelete="CASCADE"), nullable=False, index=True)
+    agent_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    estimated_cost: Mapped[float] = mapped_column(Float, nullable=False)
+    estimated_duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    capability_score: Mapped[float] = mapped_column(Float, nullable=False)
+    reliability_score: Mapped[float] = mapped_column(Float, nullable=False)
+    selection_status: Mapped[str] = mapped_column(String(16), nullable=False, default="rejected")
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 
@@ -465,3 +562,29 @@ class InvestigationReportAnchor(Base):
     anchored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     failure_summary: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class NearCommitment(Base):
+    __tablename__ = "near_commitments"
+    __table_args__ = (
+        UniqueConstraint("investigation_id", "report_version", name="uq_near_commitment_investigation_version"),
+        UniqueConstraint("transaction_hash", name="uq_near_commitment_transaction_hash"),
+        CheckConstraint("report_version > 0", name="ck_near_commitment_version_positive"),
+        CheckConstraint("status IN ('pending', 'confirmed', 'failed')", name="ck_near_commitment_status"),
+    )
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    investigation_id: Mapped[str] = mapped_column(ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
+    report_id: Mapped[str] = mapped_column(ForeignKey("investigation_reports.id", ondelete="CASCADE"), nullable=False, index=True)
+    report_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    report_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    near_account_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    contract_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    approved_by: Mapped[str] = mapped_column(ForeignKey("profiles.id"), nullable=False)
+    approval_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    approved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    transaction_hash: Mapped[str | None] = mapped_column(String(64), unique=True)
+    network: Mapped[str] = mapped_column(String(16), nullable=False, default="testnet")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    failure_summary: Mapped[str | None] = mapped_column(Text)

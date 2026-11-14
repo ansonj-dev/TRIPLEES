@@ -79,6 +79,41 @@ TRIPLEES keeps source material, analysis, and decisions distinct so a reviewer c
 
 The five agent roles do not have arbitrary tools or authority to approve credits, sign transactions, or make environmental determinations. AI output is an aid to review, not a substitute for source inspection or human judgment.
 
+## NEAR Hackathon Extension
+
+The NEAR extension adds a testnet-only report registry and an internal task-coordination layer to this existing TRIPLEES product. It does not replace X1, the current AI provider, or the existing five agents.
+
+The flow is: create and run an investigation, inspect its source-linked findings, have a reviewer approve a report digest, connect a NEAR testnet wallet, sign the registry call in that wallet, wait for API verification of the final transaction and contract state, then share the public verification link. The contract stores only an investigation identifier, report version, SHA-256 digest, submitter, timestamp, and optional metadata digest. A digest does not establish that environmental claims are true.
+
+The browser uses the officially recommended [NEAR Connect](https://docs.near.org/tools/near-connect) package (`@hot-labs/near-connect` 0.12.0), loaded as a pinned ESM bundle. The backend never signs NEAR transactions. X1 report anchoring remains a separate integration with separate configuration and signers.
+
+Agent tasks, bids, budgets, permissions, and stop controls are persisted in the existing database. Bids are deterministic estimates made by TRIPLEES software agents; budget amounts are `internal_units`, not NEAR or money. No external agent payments or automatic token transfers are enabled.
+
+See the [NEAR implementation plan](docs/NEAR_IMPLEMENTATION_PLAN.md), [NEAR architecture](docs/NEAR_ARCHITECTURE.md), [agent coordination](docs/AGENT_COORDINATION.md), [report verification](docs/REPORT_VERIFICATION.md), [security](docs/SECURITY.md), and [hackathon changes](docs/HACKATHON_CHANGES.md).
+
+### Enable NEAR Testnet
+
+NEAR is disabled by default. After a reviewed deployment and on-chain reviewer grant, set these public values in an ignored local `.env`:
+
+```dotenv
+NEAR_ENABLED=true
+NEAR_REPORT_COMMITMENTS_ENABLED=true
+NEAR_NETWORK=testnet
+NEAR_REPORT_REGISTRY_CONTRACT_ID=your-registry.testnet
+```
+
+No NEAR contract, reviewer grant, wallet signature, or testnet transaction has been performed for this checkout. The local sandbox compatibility failure described in [the change log](docs/HACKATHON_CHANGES.md) must be resolved before deployment.
+
+### Demonstration
+
+1. Start the API and worker using the local demo steps below, then sign in with **Explore the demo workspace**.
+2. Open **Investigation Center**, create an investigation for a project, and queue it. The existing five agents produce scoped outputs; research and AI limitations remain visible.
+3. Open **Agent Activity** to inspect persisted tasks, internal proposals, budget state, and audit history. Thresholded tasks wait for reviewer approval.
+4. Open **Investigation Reports**, review the report, and prepare a NEAR commitment. The connected testnet wallet prompts for the transaction; the API confirms only after the network outcome and contract state match.
+5. Open the public NEAR verification link and upload the downloaded report JSON. The unchanged report should return `VERIFIED`; a modified report should return `MISMATCH`.
+
+Steps 4-5 require a deployed registry and an account granted reviewer permission. Without those values, the rest of TRIPLEES remains usable and NEAR controls stay unavailable.
+
 ## Repository Structure
 
 ```text
@@ -122,7 +157,7 @@ Local-only directories such as `data/`, `.venv/`, `node_modules/`, contract arti
 | Frontend | HTML, CSS, vanilla JavaScript, Lucide icons |
 | Backend | Python 3.11+, FastAPI, Pydantic, SQLAlchemy, httpx |
 | Persistence | SQLite/PostgreSQL, Alembic migrations, local/S3-compatible off-chain evidence storage |
-| Blockchain | Solidity, Hardhat, ethers, Web3.py, X1 Maculatus testnet |
+| Blockchain | Solidity, Hardhat, ethers, Web3.py, X1 Maculatus; Rust `near-sdk` 5.x, NEAR testnet |
 | Tests | pytest, FastAPI TestClient, Hardhat |
 
 ## Getting Started
@@ -225,6 +260,24 @@ The authenticated app also includes an intelligence dashboard, investigation cen
 
 The JSON files are illustrative fixtures, not a guarantee of compatibility with every API request schema. Use `/api/docs` for current endpoint payloads.
 
+## NEAR Testnet
+
+NEAR report commitments use `TripleESReportRegistry`, not either X1 contract. They reuse the existing canonical report SHA-256 and keep report contents/evidence off-chain. A reviewer approves the digest in TRIPLEES; the connected NEAR wallet signs the transaction. The backend validates the actual testnet transaction and reads contract state before recording confirmation.
+
+Official references checked on 2026-11-13: [NEAR Connect](https://docs.near.org/tools/near-connect), [wallet integration](https://docs.near.org/web3-apps/tutorials/wallet-login), and [Rust contract quickstart](https://docs.near.org/smart-contracts/quickstart). The frontend loads the pinned NEAR Connect ESM bundle and needs browser access to the ESM CDN. `NEAR_ENABLED` and `NEAR_REPORT_COMMITMENTS_ENABLED` default to false. Configure a testnet contract account only after deployment and reviewer permission setup; see [report verification](docs/REPORT_VERIFICATION.md).
+
+Build and host-test the Rust contract:
+
+```bash
+cd services/contracts/near-report-registry
+cargo test
+cargo near build non-reproducible-wasm
+npm ci
+npm run test:sandbox
+```
+
+The host suite passes 8 tests and `cargo near build` succeeds. The near-workspaces sandbox test is included but currently fails with `PrepareError::Deserialization` for both cargo-near and plain cargo Wasm output. Do not deploy until this runtime compatibility issue is resolved and the sandbox test passes. No NEAR deployment or transaction has been performed for this checkout.
+
 ## X1 Testnet
 
 From `services/contracts`:
@@ -260,6 +313,8 @@ npm --prefix services\contracts test
 
 API workflow tests use a temporary SQLite database and evidence directory. Static-hosting tests check the public pages and assets and confirm that private repository paths return 404. Contract tests run locally; ordinary tests do not broadcast testnet transactions.
 
+Current regression results for this extension: `python -m pytest services/api/tests -q` passes 36 tests; NEAR host contract tests pass 8; the existing X1 Hardhat suite passes 7; and the NEAR Wasm build succeeds. The near-workspaces sandbox result remains a known failure as described above, not a passing integration test.
+
 ## Documentation
 
 The README is the product tour and local demo guide. The focused references below preserve implementation detail, operating constraints, and dated verification history.
@@ -283,6 +338,11 @@ The README is the product tour and local demo guide. The focused references belo
 | Blockchain | [X1 setup](docs/X1_TESTNET_SETUP.md) | Network configuration and operational prerequisites |
 | Blockchain | [Deployment and verification](docs/DEPLOYMENT_AND_VERIFICATION.md) | Recorded deployment and explicit testnet operations |
 | Blockchain | [Report anchoring](docs/REPORT_ANCHORING.md) | Digest format, reviewer approval, and optional anchoring workflow |
+| Blockchain | [NEAR architecture](docs/NEAR_ARCHITECTURE.md) | Testnet wallet, registry, RPC checks, and X1 separation |
+| Blockchain | [Report verification](docs/REPORT_VERIFICATION.md) | Canonical digest, wallet signing, verification, and deployment gate |
+| Investigations | [Agent coordination](docs/AGENT_COORDINATION.md) | Internal bids, task assignment, budgets, permissions, emergency stop |
+| Security | [Security](docs/SECURITY.md) | Wallet, API, transaction, privacy, and prototype boundaries |
+| Hackathon | [Hackathon changes](docs/HACKATHON_CHANGES.md) | Existing product, new work, NEAR features, and limitations |
 | Operations | [Production operations](docs/PRODUCTION_OPERATIONS.md) | Database/storage, security limits, backups, and production readiness gate |
 | Operations | [Implementation checklist](docs/IMPLEMENTATION_CHECKLIST.md) | Delivery checklist and outstanding engineering work |
 | Status | [Current-state audit](docs/TRIPLEES_CURRENT_STATE_AUDIT.md) | Verified components, limits, and audit findings |

@@ -18,6 +18,8 @@ const NAV = [
   { id: 'evidence', label: 'Evidence', icon: '▤', path: '/evidence' },
   { id: 'verification', label: 'Verification', icon: '✓', path: '/verification' },
   { id: 'conflicts', label: 'Registry Conflicts', icon: '◎', path: '/conflicts' },
+  { group: 'BLOCKCHAINS' },
+  { id: 'near-account', label: 'NEAR Account', icon: '◈', path: '/near-account' },
   { id: 'marketplace', label: 'Marketplace', icon: '▣', path: '/marketplace', optional: true },
   { group: 'INSIGHTS' },
   { id: 'alerts', label: 'Alerts', icon: '♧', path: '/alerts' },
@@ -88,12 +90,13 @@ let selectedAlertFilter = 'All';
 let selectedMonitoringTab = 'All';
 let selectedEvidenceTab = 'All';
 let assessmentResult = null;
+const nearState = { config: null, connector: null, wallet: null, accountId: '', error: '', loading: true, history: [], historyLoading: false, historyLoaded: false };
 const intelligenceState = {
   dashboard: { loading: false, loaded: false, error: '', investigations: [], findings: [], reviewQueue: null, aiHealth: null, usage: null },
   center: { loading: false, loaded: false, error: '', investigations: [] },
-  activity: { loading: false, loaded: false, loadedId: '', error: '', investigations: [], selectedId: '', detail: null, agents: null, audit: null },
+  activity: { loading: false, loaded: false, loadedId: '', error: '', investigations: [], selectedId: '', detail: null, agents: null, audit: null, coordination: null, permissions: [] },
   risk: { loading: false, loaded: false, error: '', findings: [] },
-  reports: { loading: false, loaded: false, loadedId: '', loadingReport: false, error: '', reportError: '', investigations: [], selectedId: '', version: null, report: null },
+  reports: { loading: false, loaded: false, loadedId: '', loadingReport: false, error: '', reportError: '', investigations: [], selectedId: '', version: null, report: null, nearCommitments: [] },
   review: { loading: false, loaded: false, error: '', items: [], history: [] },
 };
 let riskFilters = { query: '', severity: 'All', status: 'All' };
@@ -161,11 +164,89 @@ async function initializeBackend() {
   try {
     await apiRequest('/api/me');
     await refreshBackend();
+    await initializeNearWallet();
   } catch (error) {
     backendConnected = false;
     console.warn('TRIPLEES API unavailable or the local session expired.', error);
     localStorage.removeItem(API_TOKEN_KEY);
     window.location.replace('auth.html');
+  }
+}
+function setNearWallet(wallet, accountId = '') {
+  nearState.wallet = wallet || null;
+  nearState.accountId = accountId || '';
+  nearState.error = '';
+  if (['near-account', 'investigation-reports'].includes(routeInfo().page)) renderShell();
+}
+async function setupNearConnector() {
+  if (nearState.connector) return nearState.connector;
+  const { NearConnector } = await import('https://esm.sh/@hot-labs/near-connect@0.12.0?bundle');
+  const connector = new NearConnector({ network: 'testnet', features: { testnet: true, signAndSendTransaction: true } });
+  connector.on('wallet:signIn', async (event) => {
+    try {
+      const wallet = await connector.wallet();
+      const accounts = await wallet.getAccounts();
+      setNearWallet(wallet, event.accounts?.[0]?.accountId || accounts[0]?.accountId || '');
+    } catch (error) { nearState.error = error.message || 'Could not read the connected NEAR account.'; }
+  });
+  connector.on('wallet:signOut', () => setNearWallet(null));
+  nearState.connector = connector;
+  try {
+    const wallet = await connector.wallet();
+    const accounts = await wallet.getAccounts();
+    setNearWallet(wallet, accounts[0]?.accountId || '');
+  } catch { setNearWallet(null); }
+  return connector;
+}
+async function initializeNearWallet() {
+  nearState.loading = true;
+  try {
+    const response = await fetch('/api/near/config');
+    const config = await response.json();
+    if (!response.ok) throw new Error(config.detail?.message || 'NEAR configuration is unavailable.');
+    nearState.config = config;
+    if (config.enabled) await setupNearConnector();
+    else nearState.error = 'NEAR testnet wallet support is disabled in server configuration.';
+  } catch (error) { nearState.error = error.message || 'NEAR wallet connector could not be loaded.'; }
+  finally {
+    nearState.loading = false;
+    if (routeInfo().page === 'near-account') renderShell();
+  }
+}
+async function connectNearWallet() {
+  try {
+    if (!nearState.config) await initializeNearWallet();
+    if (!nearState.config?.enabled) throw new Error(nearState.error || 'NEAR testnet is not enabled.');
+    const connector = await setupNearConnector();
+    const wallet = await connector.connect();
+    const accounts = await wallet.getAccounts();
+    if (!accounts[0]?.accountId) throw new Error('The connected wallet did not return an account ID.');
+    setNearWallet(wallet, accounts[0].accountId);
+    toast(`Connected to NEAR testnet as ${accounts[0].accountId}.`);
+  } catch (error) {
+    nearState.error = error.message || 'NEAR wallet connection was cancelled or unavailable.';
+    toast(nearState.error, true);
+    if (routeInfo().page === 'near-account') renderShell();
+  }
+}
+async function disconnectNearWallet() {
+  try {
+    if (nearState.wallet && nearState.connector) await nearState.connector.disconnect(nearState.wallet);
+    setNearWallet(null);
+    toast('NEAR wallet disconnected.');
+  } catch (error) { toast(error.message || 'Could not disconnect the NEAR wallet.', true); }
+}
+async function loadNearHistory() {
+  if (nearState.historyLoading || nearState.historyLoaded) return;
+  nearState.historyLoading = true;
+  try {
+    const result = await apiRequest('/api/near/commitments?limit=100');
+    nearState.history = result.items || [];
+  } catch (error) { nearState.error = error.message || 'NEAR commitment history is unavailable.'; }
+  finally {
+    nearState.historyLoading = false;
+    nearState.historyLoaded = true;
+    if (routeInfo().page === 'near-account') renderShell();
   }
 }
 const projectFor = (projectId) => db.projects.find((p) => p.id === projectId);
@@ -174,7 +255,7 @@ const currentPath = () => (location.hash.replace(/^#/, '') || '/dashboard');
 const statusClass = (status = '') => `status-${String(status).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 const statusTag = (status) => `<span class="status ${statusClass(status)}">${escapeHtml(status)}</span>`;
 const recordLabel = (demo = true) => demo ? `<span class="tag">DEMO DATA</span>` : '';
-const navigationIcons = { dashboard: 'layout-dashboard', projects: 'trees', intelligence: 'chart-no-axes-combined', investigations: 'scan-search', 'agent-activity': 'activity', 'risk-intelligence': 'shield-alert', 'investigation-reports': 'file-check-2', 'review-queue': 'clipboard-check', credits: 'layers', monitoring: 'activity', evidence: 'files', verification: 'badge-check', conflicts: 'git-compare-arrows', marketplace: 'store', alerts: 'bell', reports: 'download', explorer: 'scan-search', community: 'users', settings: 'settings' };
+const navigationIcons = { dashboard: 'layout-dashboard', projects: 'trees', intelligence: 'chart-no-axes-combined', investigations: 'scan-search', 'agent-activity': 'activity', 'risk-intelligence': 'shield-alert', 'investigation-reports': 'file-check-2', 'review-queue': 'clipboard-check', credits: 'layers', monitoring: 'activity', evidence: 'files', verification: 'badge-check', conflicts: 'git-compare-arrows', 'near-account': 'wallet', marketplace: 'store', alerts: 'bell', reports: 'download', explorer: 'scan-search', community: 'users', settings: 'settings' };
 const uiIcon = (name, fallback = '') => window.lucide ? `<i data-lucide="${name}" aria-hidden="true"></i>` : fallback;
 const renderNav = () => {
   $('#side-nav').innerHTML = NAV.map((item) => item.group ? `<div class="nav-group-label">${item.group}</div>` : `<a class="nav-link" data-nav="${item.id}" href="#${item.path}" title="${escapeHtml(item.label)}"><span class="nav-icon" aria-hidden="true">${uiIcon(navigationIcons[item.id], item.icon)}</span><span>${escapeHtml(item.label)}</span>${item.optional ? '<span class="nav-optional">Future</span>' : ''}</a>`).join('');
@@ -274,9 +355,10 @@ function renderShell() {
   if (window.lucide) window.lucide.createIcons();
   content.focus({ preventScroll: true });
   if (['intelligence', 'investigations', 'agent-activity', 'risk-intelligence', 'investigation-reports', 'review-queue'].includes(page)) loadIntelligencePage(page, objectId);
+  if (page === 'near-account') loadNearHistory();
 }
 function renderPage(page, objectId) {
-  const pages = { dashboard: dashboardPage, projects: projectsPage, new: newProjectPage, project: projectPage, credits: creditsPage, credit: creditPage, monitoring: monitoringPage, evidence: evidencePage, verification: verificationPage, conflicts: conflictsPage, alerts: alertsPage, reports: reportsPage, intelligence: intelligenceDashboardPage, investigations: investigationCenterPage, 'agent-activity': agentActivityPage, 'risk-intelligence': riskIntelligencePage, 'investigation-reports': investigationReportsPage, 'review-queue': findingReviewPage, explorer: explorerPage, verify: publicVerifyPage, marketplace: marketplacePage, community: communityPage, settings: settingsPage };
+  const pages = { dashboard: dashboardPage, projects: projectsPage, new: newProjectPage, project: projectPage, credits: creditsPage, credit: creditPage, monitoring: monitoringPage, evidence: evidencePage, verification: verificationPage, conflicts: conflictsPage, alerts: alertsPage, reports: reportsPage, intelligence: intelligenceDashboardPage, investigations: investigationCenterPage, 'agent-activity': agentActivityPage, 'risk-intelligence': riskIntelligencePage, 'investigation-reports': investigationReportsPage, 'review-queue': findingReviewPage, 'near-account': nearAccountPage, explorer: explorerPage, verify: publicVerifyPage, marketplace: marketplacePage, community: communityPage, settings: settingsPage };
   return (pages[page] || notFoundPage)(objectId);
 }
 function pageHeader(title, subtitle, action = '') {
@@ -316,13 +398,15 @@ async function loadIntelligencePage(page, objectId = '') {
       const selected = objectId || state.selectedId || state.investigations[0]?.id || '';
       state.selectedId = selected;
       if (selected) {
-        const [detail, agents, audit] = await Promise.all([
+        const [detail, agents, audit, coordination] = await Promise.all([
           apiRequest(`/api/investigations/${encodeURIComponent(selected)}`),
           apiRequest(`/api/investigations/${encodeURIComponent(selected)}/agents`),
           apiRequest(`/api/investigations/${encodeURIComponent(selected)}/audit`),
+          apiRequest(`/api/agents/coordination/${encodeURIComponent(selected)}`),
         ]);
-        state.detail = detail; state.agents = agents; state.audit = audit.items || [];
-      } else { state.detail = null; state.agents = null; state.audit = []; }
+        state.detail = detail; state.agents = agents; state.audit = audit.items || []; state.coordination = coordination;
+        try { state.permissions = (await apiRequest('/api/agents/permissions')).items || []; } catch { state.permissions = []; }
+      } else { state.detail = null; state.agents = null; state.audit = []; state.coordination = null; state.permissions = []; }
       state.loadedId = selected;
     } else if (page === 'risk-intelligence') {
       const result = await apiRequest('/api/findings?limit=200'); state.findings = result.items || [];
@@ -333,6 +417,10 @@ async function loadIntelligencePage(page, objectId = '') {
       if (selected) {
         try { state.report = await apiRequest(`/api/investigations/${encodeURIComponent(selected)}/report`); state.version = state.report.version; }
         catch (error) { state.report = null; state.reportError = error.message; }
+        try {
+          const commitments = await apiRequest(`/api/near/commitments/${encodeURIComponent(selected)}`);
+          state.nearCommitments = commitments.items || [];
+        } catch { state.nearCommitments = []; }
       }
       state.loadedId = selected;
     } else if (page === 'review-queue') {
@@ -394,6 +482,24 @@ function investigationCenterPage() {
     </form></section><aside class="card card-pad">${cardTitle('What the workflow does')}<div class="timeline-list"><div class="timeline-entry"><strong>Evidence Analyst</strong><small>Reviews selected extraction records and claim candidates.</small></div><div class="timeline-entry"><strong>Integrity and Monitoring Analysts</strong><small>Compare project-scoped imported rows and observations.</small></div><div class="timeline-entry"><strong>Research and Independent Review</strong><small>Research needs a configured provider; the review agent checks traceability and overclaim language.</small></div><div class="timeline-entry"><strong>Report and human review</strong><small>Findings, sources, limitations and decisions are versioned and auditable.</small></div></div><div class="callout warning section-space">A finding is not proof of fraud, environmental damage, project validity, or credit certification.</div></aside></div>`}
     <section class="card card-pad section-space">${cardTitle('Existing investigations', `${state.investigations.length} visible to this account`)}${state.investigations.length ? `<div class="intel-list">${state.investigations.map((row) => `<article class="intel-list-row"><div><strong>${investigationLink(row)}</strong><small>${escapeHtml(row.project_id)} · ${escapeHtml(row.scope.slice(0, 180))}</small></div><div>${investigationStatus(row)} <a class="table-action" href="#/agent-activity/${encodeURIComponent(row.id)}">Activity</a> <a class="table-action" href="#/investigation-reports/${encodeURIComponent(row.id)}">Report</a></div></article>`).join('')}</div>` : emptyMini('No saved investigations.', 'Use the form above to create the first investigation.')}</section>`;
 }
+function agentCoordinationPanel(state) {
+  const coordination = state.coordination;
+  if (!coordination?.tasks?.length) return `<section class="card card-pad section-space">${cardTitle('Agent coordination', 'Internal task and bid simulation')}${emptyMini('No task plan exists yet.', 'Queue an investigation to create scoped tasks for the five existing agents.')}</section>`;
+  const reviewer = ['reviewer', 'admin'].includes(db.settings?.role);
+  const budget = coordination.budget || {};
+  const investigationActive = ['queued', 'running', 'retry_wait', 'cancel_requested'].includes(coordination.investigation_status);
+  const tasks = coordination.tasks.map((task) => {
+    let action = '';
+    if (task.status === 'awaiting_review' && reviewer) action = `<button class="btn btn-sm btn-primary" data-action="approve-agent-task-budget" data-id="${escapeHtml(task.id)}">Approve budget</button>`;
+    else if (task.status === 'assigned' && !investigationActive) action = `<button class="btn btn-sm btn-primary" data-action="execute-agent-task" data-id="${escapeHtml(task.id)}">Execute task</button>`;
+    else if (task.status === 'running') action = `<button class="btn btn-sm btn-danger" data-action="cancel-agent-task" data-id="${escapeHtml(task.id)}">Cancel task</button>`;
+    const bids = (task.bids || []).map((bid) => `<div class="agent-bid-row"><span><strong>${escapeHtml(bid.agent_id.replaceAll('_', ' '))}</strong><small>${escapeHtml(bid.reason)}</small></span><span>${Number(bid.estimated_cost).toFixed(2)} ${escapeHtml(budget.unit || 'internal_units')} · ${bid.estimated_duration_seconds}s · capability ${Math.round(bid.capability_score * 100)}%</span>${reviewer && bid.agent_id !== task.agent_id && ['assigned', 'awaiting_review'].includes(task.status) ? `<button class="table-action" data-action="assign-agent-task" data-id="${escapeHtml(task.id)}" data-bid-id="${escapeHtml(bid.id)}">Assign</button>` : statusTag(bid.selection_status)}</div>`).join('');
+    return `<article class="agent-task-row"><div class="agent-task-head"><div><strong>${escapeHtml(task.description)}</strong><small>${escapeHtml(task.task_type.replaceAll('_', ' '))} · selected ${escapeHtml(task.agent_id.replaceAll('_', ' '))} · priority ${task.priority}</small></div>${statusTag(task.status.replaceAll('_', ' '))}</div><p class="tiny">Output: ${escapeHtml(task.expected_output_schema)} · allocation ${Number(task.budget_allocated).toFixed(2)} ${escapeHtml(budget.unit || 'internal_units')} · spent ${Number(task.budget_spent).toFixed(2)}</p>${task.error_info ? `<p class="callout warning">${escapeHtml(task.error_info)}</p>` : ''}<div class="agent-task-actions">${action}</div>${bids ? `<details class="agent-bids"><summary>Proposals (${task.bids.length})</summary>${bids}</details>` : ''}</article>`;
+  }).join('');
+  const treasury = `<section class="card card-pad section-space">${cardTitle('Investigation treasury', `Internal accounting · ${escapeHtml(budget.unit || 'internal_units')}`, '<span class="tag">NOT NEAR TOKENS</span>')}<div class="near-account-fields"><div><small>Total budget</small><strong>${Number(budget.budget_limit || 0).toFixed(2)}</strong></div><div><small>Allocated</small><strong>${Number(budget.allocated_amount || 0).toFixed(2)}</strong></div><div><small>Spent</small><strong>${Number(budget.spent_amount || 0).toFixed(2)}</strong></div><div><small>Remaining</small><strong>${Number(budget.remaining_amount || 0).toFixed(2)}</strong></div><div><small>Approval threshold</small><strong>${Number(budget.approval_threshold || 0).toFixed(2)}</strong></div><div><small>Emergency stop</small><strong>${budget.emergency_stop ? 'ACTIVE' : budget.frozen ? 'FROZEN' : 'OFF'}</strong></div></div>${reviewer ? `<div class="agent-task-actions"><button class="btn btn-sm" data-action="set-agent-emergency-stop" data-investigation-id="${escapeHtml(coordination.investigation_id)}" data-active="${budget.frozen ? 'false' : 'true'}">${budget.frozen ? 'Unfreeze treasury' : 'Emergency stop'}</button></div>` : ''}<div class="agent-budget-list">${(budget.agents || []).map((item) => `<div class="agent-budget-row"><span>${escapeHtml(item.agent_id.replaceAll('_', ' '))}</span><span>${Number(item.spent_amount).toFixed(2)} spent / ${Number(item.budget_limit).toFixed(2)} max</span></div>`).join('')}</div></section>`;
+  const permissions = reviewer ? `<section class="card card-pad section-space">${cardTitle('Agent permissions', 'Human-managed execution boundaries')}<div class="agent-permission-list">${state.permissions.map((item) => `<div class="agent-budget-row"><span>${escapeHtml(item.agent_id.replaceAll('_', ' '))} · ${escapeHtml(item.permission.replaceAll('_', ' '))}</span><span>${item.allowed ? 'Allowed' : 'Blocked'}</span>${item.permission === 'execute' ? `<button class="table-action" data-action="toggle-agent-permission" data-agent-id="${escapeHtml(item.agent_id)}" data-permission="${escapeHtml(item.permission)}" data-allowed="${item.allowed ? 'false' : 'true'}">${item.allowed ? 'Disable' : 'Enable'}</button>` : ''}</div>`).join('') || '<p class="small muted">No permission records are available until a task plan is created.</p>'}</div><p class="tiny muted">Agents can never sign wallet transactions. External AI consent remains a separate per-investigation control.</p></section>` : '';
+  return `<section class="card card-pad section-space">${cardTitle('Agent coordination', 'Deterministic internal capability/cost/reliability selection', `<span class="tag">INTERNAL SIMULATION</span>`)}<div class="agent-task-list">${tasks}</div><p class="tiny muted">These proposals are generated by TRIPLEES software components, not independent economic agents. No NEAR is transferred.</p></section>${treasury}${permissions}`;
+}
 function agentActivityPage(objectId = '') {
   const state = intelligenceState.activity; const loading = intelLoadMessage(state);
   if (loading) return `${pageHeader('Agent Activity', 'Inspect safe execution progress, outputs, retries, and audit events.', intelRefreshButton())}${loading}`;
@@ -406,6 +512,7 @@ function agentActivityPage(objectId = '') {
   return `${pageHeader('Agent Activity', 'Inspect safe execution progress, outputs, retries, and audit events.', `${actions}${intelRefreshButton()}`)}
     <section class="card card-pad"><div class="toolbar"><label class="field"><span class="sr-only">Select investigation</span><select id="intel-activity-select" aria-label="Select investigation">${state.investigations.map((item) => `<option value="${escapeHtml(item.id)}" ${item.id === row.id ? 'selected' : ''}>${escapeHtml(item.title)} · ${escapeHtml(item.id)}</option>`).join('')}</select></label>${investigationStatus(row)}<span class="small muted">Attempt ${row.attempt_count || 0}</span></div><h2>${escapeHtml(row.title)}</h2><p class="small">${escapeHtml(row.scope)}</p><div class="detail-fields">${detailField('Project', row.project_id)}${detailField('Created', niceDateTime(row.created_at))}${detailField('Started', niceDateTime(row.started_at))}${detailField('Completed', niceDateTime(row.completed_at))}</div>${row.failure_summary ? `<div class="callout warning section-space">${escapeHtml(row.failure_summary)}</div>` : ''}</section>
     <section class="card card-pad section-space">${cardTitle('Agent executions', 'Task summaries and structured outputs only; hidden reasoning is not shown')}${executions.length ? `<div class="agent-execution-list">${executions.map((execution) => `<article class="agent-execution"><div class="agent-execution-head"><div><h3>${escapeHtml(execution.agent_key.replaceAll('_', ' '))}</h3><p>${escapeHtml(execution.task_summary)}</p></div>${statusTag(execution.status.replaceAll('_', ' '))}</div><small>${niceDateTime(execution.started_at)}${execution.completed_at ? ` · ${niceDateTime(execution.completed_at)}` : ''} · Attempt ${execution.attempt_number}</small>${execution.error_code ? `<p class="callout warning section-space">Safe error code: <code>${escapeHtml(execution.error_code)}</code></p>` : ''}${execution.output ? `<div class="agent-output section-space"><strong>${escapeHtml(execution.output.summary)}</strong>${execution.output.findings?.length ? `<ul>${execution.output.findings.slice(0, 5).map((finding) => `<li>${severityTag(finding.severity)} ${escapeHtml(finding.title)}</li>`).join('')}</ul>` : ''}${execution.output.limitations?.length ? `<details><summary>Limitations (${execution.output.limitations.length})</summary><ul>${execution.output.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></details>` : ''}</div>` : ''}</article>`).join('')}</div>` : emptyMini('No agent executions yet.', 'Queue this investigation to start the worker.')}</section>
+    ${agentCoordinationPanel(state)}
     <section class="card card-pad section-space">${cardTitle('Audit history', 'Persistent lifecycle events')}<div class="timeline-list">${(state.audit || []).slice().reverse().map((event) => `<div class="timeline-entry"><strong>${escapeHtml(event.event_type.replaceAll('_', ' '))}</strong><small>${niceDateTime(event.created_at)}${event.details?.agent_key ? ` · ${escapeHtml(event.details.agent_key)}` : ''}${event.details?.status ? ` · ${escapeHtml(event.details.status)}` : ''}</small></div>`).join('') || '<p class="small muted">No audit events are available.</p>'}</div></section>`;
 }
 function findingCard(finding, { review = false } = {}) {
@@ -431,6 +538,10 @@ async function selectInvestigationReport(investigationId, version = null) {
   try {
     const suffix = version ? `?version=${encodeURIComponent(version)}` : '';
     state.report = await apiRequest(`/api/investigations/${encodeURIComponent(investigationId)}/report${suffix}`);
+    try {
+      const commitments = await apiRequest(`/api/near/commitments/${encodeURIComponent(investigationId)}`);
+      state.nearCommitments = commitments.items || [];
+    } catch { state.nearCommitments = []; }
     state.version = state.report.version; state.loaded = true;
   } catch (error) { state.reportError = error.message; }
   finally { state.loadingReport = false; if (routeInfo().page === 'investigation-reports') renderShell(); }
@@ -451,6 +562,7 @@ function investigationReportContent(report) {
   return `<article class="report-document section-space" id="investigation-report-document"><header class="report-document-head"><div><p class="eyebrow">TRIPLEES INVESTIGATION REPORT · VERSION ${report.version}</p><h2>${escapeHtml(inv.title || 'Investigation report')}</h2><p>${escapeHtml(inv.project_name || inv.project_id || '')} · ${escapeHtml(report.status.replaceAll('_', ' '))} · ${niceDateTime(report.created_at)}</p></div><span class="tag">${escapeHtml(report.anchor?.status ? report.anchor.status.replaceAll('_', ' ').toUpperCase() : 'NOT ANCHORED TO X1')}</span></header>
     <div class="report-summary"><h3>Executive summary</h3><p>${escapeHtml(report.summary)}</p><p><strong>Scope:</strong> ${escapeHtml(inv.scope || 'Not recorded')}</p><p><strong>Method:</strong> Structured outputs from the configured agents and supplied project records. No independent external facts are implied.</p></div>
     ${reportAnchorPanel(report)}
+    ${nearReportPanel(report)}
     <section class="section-space">${cardTitle(`Findings (${content.findings?.length || 0})`, 'Severity, citations, confidence, and reviewer state')}${content.findings?.length ? `<div class="finding-list">${content.findings.map((finding) => findingCard(finding)).join('')}</div>` : emptyMini('No findings saved.', 'Agent outputs did not contain structured findings.')}</section>
     <div class="two-col section-space"><section class="card card-pad">${cardTitle('Agent execution summary')}<div class="timeline-list">${(content.agents || []).map((agent) => `<div class="timeline-entry"><strong>${escapeHtml(agent.agent_key.replaceAll('_', ' '))} · ${escapeHtml(agent.status.replaceAll('_', ' '))}</strong><small>${niceDateTime(agent.started_at)}${agent.error_code ? ` · ${escapeHtml(agent.error_code)}` : ''}</small></div>`).join('') || '<p class="small muted">No executions recorded.</p>'}</div></section><section class="card card-pad">${cardTitle('Source references', `${content.sources?.length || 0} public source(s)`)}<div class="source-list">${(content.sources || []).map((source) => `<a class="source-row" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer"><span class="source-status"></span><span><strong>${escapeHtml(source.title)}</strong><small>${escapeHtml(source.publisher || source.domain || '')} · Retrieved ${niceDateTime(source.retrieved_at)}</small></span><span>Open ↗</span></a>`).join('') || '<p class="small muted">No public source references were collected.</p>'}</div></section></div>
     <section class="card card-pad section-space">${cardTitle(`Limitations and unresolved questions (${content.limitations?.length || 0})`)}${content.limitations?.length ? `<ul class="limitation-list">${content.limitations.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : '<p class="small">No additional limitations were recorded by the agents.</p>'}<p class="tiny muted">${escapeHtml(content.confidence_note || 'Confidence is an estimate, not a calibrated probability.')}</p><p class="tiny muted">${escapeHtml(content.human_review_note || '')}</p></section>
@@ -471,6 +583,51 @@ function reportAnchorPanel(report) {
   else if (anchor.status === 'failed' && reviewer) action = `<button class="btn btn-primary" data-action="submit-report-anchor" data-id="${escapeHtml(anchor.id)}" ${destinationReady ? '' : 'disabled'}>Confirm and retry X1 submission</button>`;
   const tx = anchor?.transaction_hash ? `<p class="tiny">Transaction <a target="_blank" rel="noopener noreferrer" href="${escapeHtml(networkExplorer())}/tx/${encodeURIComponent(anchor.transaction_hash)}">${escapeHtml(anchor.transaction_hash)} ↗</a> · block ${anchor.block_number ?? 'pending'}</p>` : '';
   return `<section class="report-anchor-panel"><div><p class="eyebrow">REPORT COMMITMENT</p><h3>SHA-256 digest · version ${report.version}</h3><p class="report-digest"><code>${escapeHtml(digest)}</code><button class="table-action" data-action="copy" data-copy="${escapeHtml(digest)}">Copy digest</button></p><small>Canonicalization: ${escapeHtml(report.commitment?.canonicalization || 'Not available')}. Only this digest and a random reference are submitted; report contents stay off-chain.</small></div><div class="report-anchor-actions">${action}${shareLink}</div>${anchor ? `<p class="tiny">Approval: ${escapeHtml(anchor.approved_by || '')} · ${niceDateTime(anchor.approved_at)} · ${escapeHtml(anchor.approval_reason || '')}</p>${anchor.failure_summary ? `<p class="callout warning">${escapeHtml(anchor.failure_summary)}</p>` : ''}${tx}` : ''}<p class="tiny muted">An X1 anchor proves that a digest was recorded. It does not establish report accuracy, project validity, or credit certification.</p></section>`;
+}
+function nearReportPanel(report) {
+  const state = intelligenceState.reports;
+  const commitment = (state.nearCommitments || []).find((item) => item.report_version === report.version);
+  const reviewer = ['reviewer', 'admin'].includes(db.settings?.role);
+  const enabled = nearState.config?.report_commitments_enabled === true;
+  const accountId = nearState.accountId;
+  let action = '';
+  if (!commitment || commitment.status === 'failed') {
+    if (!reviewer) action = '<p class="tiny muted">Reviewer authorization is required to prepare this NEAR commitment.</p>';
+    else if (!enabled) action = '<p class="tiny muted">NEAR report commitments are disabled or the registry contract is not configured.</p>';
+    else if (!accountId) action = '<button class="btn btn-primary" data-action="connect-near-wallet">Connect NEAR wallet</button>';
+    else action = `<button class="btn btn-primary" data-action="prepare-near-commitment" data-report-id="${escapeHtml(report.id)}">${commitment ? 'Retry report commitment' : 'Prepare NEAR commitment'}</button>`;
+  } else if (commitment.status === 'pending' && commitment.transaction_hash && reviewer) {
+    action = `<button class="btn" data-action="confirm-near-commitment" data-id="${escapeHtml(commitment.id)}">Check confirmation</button>`;
+  } else if (commitment.status === 'pending' && reviewer && enabled && accountId) {
+    action = `<button class="btn btn-primary" data-action="prepare-near-commitment" data-report-id="${escapeHtml(report.id)}">Retry wallet signature</button>`;
+  }
+  const share = commitment?.id ? `<a class="btn btn-sm" href="/report-verify.html?near=${encodeURIComponent(commitment.id)}" target="_blank" rel="noopener noreferrer">Public NEAR verification ↗</a>` : '';
+  const transaction = commitment?.transaction_hash
+    ? `<p class="tiny">Transaction <a href="${escapeHtml(nearState.config?.explorer_url || 'https://explorer.testnet.near.org')}/transactions/${encodeURIComponent(commitment.transaction_hash)}" target="_blank" rel="noopener noreferrer">${escapeHtml(commitment.transaction_hash)} ↗</a></p>` : '';
+  return `<section class="near-report-panel"><div><p class="eyebrow">NEAR TESTNET REPORT COMMITMENT</p><h3>Version ${report.version} · SHA-256</h3><p class="report-digest"><code>${escapeHtml(report.commitment?.sha256 || '')}</code></p><div class="near-commitment-meta"><span>State ${statusTag(commitment?.status || (enabled ? 'not prepared' : 'disabled'))}</span><span>Account ${escapeHtml(commitment?.near_account_id || accountId || 'Not connected')}</span><span>Contract ${escapeHtml(nearState.config?.contract_id || 'Not configured')}</span></div>${transaction}</div><div class="report-anchor-actions">${action}${share}</div><p class="tiny muted">The connected wallet signs this transaction. Only the digest and minimal report identifiers go on-chain; a matching digest does not establish the truth of environmental claims.</p></section>`;
+}
+function nearAccountPage() {
+  const config = nearState.config;
+  const connected = Boolean(nearState.accountId);
+  const network = config?.network === 'testnet' ? 'NEAR Testnet' : config?.network || 'Not configured';
+  const accountControl = connected
+    ? `<button class="btn" data-action="disconnect-near-wallet">Disconnect wallet</button>`
+    : `<button class="btn btn-primary" data-action="connect-near-wallet" ${nearState.loading || !config?.enabled ? 'disabled' : ''}>Connect NEAR wallet</button>`;
+  const history = nearState.history.map((item) => {
+    const tx = item.transaction_hash
+      ? `<a class="table-action" href="${escapeHtml(item.explorer_url)}/transactions/${encodeURIComponent(item.transaction_hash)}" target="_blank" rel="noopener noreferrer">View transaction ↗</a>` : '';
+    return `<article class="near-history-row"><div><strong>${escapeHtml(item.investigation_id)} · Report v${item.report_version}</strong><small>${escapeHtml(item.near_account_id)} · ${niceDateTime(item.created_at)}</small></div><div>${statusTag(item.status)}${tx}</div></article>`;
+  }).join('');
+  const historyContent = nearState.historyLoading
+    ? '<div class="workspace-loading" role="status"><span class="loading-indicator"></span><p>Loading commitment history…</p></div>'
+    : history || emptyMini('No NEAR report commitments yet.', 'Reviewer-approved report digests will appear here after wallet submission.');
+  return `${pageHeader('NEAR Account', 'Connect a testnet wallet to sign reviewer-approved report commitments.', '')}
+    <section class="card card-pad near-account-panel">${cardTitle('Wallet connection', 'NEAR testnet only', accountControl)}
+      <div class="near-account-fields"><div><small>Account</small><strong>${escapeHtml(nearState.accountId || 'Disconnected')}</strong></div><div><small>Network</small><strong>${escapeHtml(network)}</strong></div><div><small>Registry contract</small><strong>${escapeHtml(config?.contract_id || 'Not configured')}</strong></div><div><small>Commitment status</small><strong>${config?.report_commitments_enabled ? 'Enabled' : 'Unavailable'}</strong></div></div>
+      ${nearState.error ? `<p class="callout ${config?.enabled ? 'warning' : 'info'}">${escapeHtml(nearState.error)}</p>` : ''}
+      <p class="tiny muted">TRIPLEES never requests or stores seed phrases or private keys. The wallet signs each report transaction directly. NEAR commitments are separate from X1 EcoChain.</p>
+    </section>
+    <section class="card card-pad section-space">${cardTitle('Report commitment history', `${nearState.history.length} saved record(s)`)}${historyContent}</section>`;
 }
 function findingReviewPage() {
   const state = intelligenceState.review; const loading = intelLoadMessage(state);
@@ -719,6 +876,16 @@ function openModal(title, description, body, submitLabel = '') {
 function modalField(label, name, type = 'text', attrs = '') { return `<div class="field"><label for="modal-${name}">${label}</label><input id="modal-${name}" name="${name}" type="${type}" ${attrs}></div>`; }
 function handleAction(actionButton) {
   const action = actionButton.dataset.action;
+  if (action === 'connect-near-wallet') { connectNearWallet(); return; }
+  if (action === 'disconnect-near-wallet') { disconnectNearWallet(); return; }
+  if (action === 'prepare-near-commitment') { promptNearCommitment(actionButton.dataset.reportId); return; }
+  if (action === 'confirm-near-commitment') { confirmNearCommitment(actionButton.dataset.id); return; }
+  if (action === 'assign-agent-task') { assignAgentTask(actionButton.dataset.id, actionButton.dataset.bidId); return; }
+  if (action === 'execute-agent-task') { executeAgentTask(actionButton.dataset.id); return; }
+  if (action === 'cancel-agent-task') { cancelAgentTask(actionButton.dataset.id); return; }
+  if (action === 'approve-agent-task-budget') { promptAgentBudgetApproval(actionButton.dataset.id); return; }
+  if (action === 'set-agent-emergency-stop') { promptAgentEmergencyStop(actionButton.dataset.investigationId, actionButton.dataset.active === 'true'); return; }
+  if (action === 'toggle-agent-permission') { updateAgentPermission(actionButton.dataset.agentId, actionButton.dataset.permission, actionButton.dataset.allowed === 'true'); return; }
   if (action === 'refresh-intelligence') { refreshIntelligencePage(); return; }
   if (action === 'finding-review') {
     if (!['reviewer', 'admin'].includes(db.settings?.role)) { toast('Only an authorized reviewer can decide findings.', true); return; }
@@ -763,6 +930,111 @@ function handleAction(actionButton) {
   if (action === 'export-report') { exportReport(actionButton.dataset.type); return; }
   if (action === 'reset-demo') { if (confirm('Reset this local TRIPLEES demo workspace and restore its original synthetic fixtures?')) { if (backendConnected) apiRequest('/api/demo/reset', { method: 'POST' }).then(() => { assessmentResult = null; toast('Demo workspace restored.'); return refreshBackend(); }).catch((error) => toast(error.message, true)); else { localStorage.removeItem(STORE_KEY); db = freshData(); assessmentResult = null; save(); toast('Demo workspace restored.'); renderShell(); } } return; }
   if (action === 'copy') { navigator.clipboard?.writeText(actionButton.dataset.copy).then(() => toast('Hash copied.')).catch(() => toast('Clipboard access is unavailable.', true)); return; }
+}
+function promptNearCommitment(reportId) {
+  const report = intelligenceState.reports.report;
+  if (!report || report.id !== reportId || !['reviewer', 'admin'].includes(db.settings?.role)) {
+    toast('An authorized reviewer must open the report before preparing a NEAR commitment.', true);
+    return;
+  }
+  if (!nearState.config?.report_commitments_enabled) { toast('NEAR testnet registry is not configured.', true); return; }
+  if (!nearState.accountId) { toast('Connect a NEAR testnet wallet first.', true); return; }
+  openModal(
+    'Approve NEAR report commitment',
+    `Approve report version ${report.version} with SHA-256 ${report.commitment?.sha256}. This approval is separate from the wallet transaction signature.`,
+    `<form id="modal-form" class="form-grid"><div class="field full"><label for="modal-reason">Reviewer reason *</label><textarea id="modal-reason" name="reason" required minlength="5" maxlength="2000" placeholder="Record why this report version is ready to commit."></textarea></div></form><p class="tiny">Network: NEAR Testnet · account: ${escapeHtml(nearState.accountId)} · contract: ${escapeHtml(nearState.config.contract_id)}</p>`,
+    'Approve and continue',
+  );
+  $('#modal-form').dataset.nearReportId = report.id;
+}
+function promptAgentBudgetApproval(taskId) {
+  showTextPrompt('Approve internal task budget', 'This approval authorizes the selected task within TRIPLEES internal accounting units; it does not authorize a NEAR transfer.', 'Approve task budget');
+  $('#modal-form').dataset.agentBudgetTaskId = taskId;
+  $('#modal-form').dataset.agentBudgetInvestigationId = intelligenceState.activity.selectedId;
+}
+function promptAgentEmergencyStop(investigationId, activate) {
+  showTextPrompt(activate ? 'Activate emergency stop' : 'Unfreeze investigation treasury',
+    activate ? 'Stop additional agent tasks at the next worker boundary. An in-flight provider call is not interrupted.' : 'Allow queued agent tasks to resume under the existing internal budget limits.',
+    activate ? 'Activate stop' : 'Unfreeze');
+  $('#modal-form').dataset.agentEmergencyInvestigationId = investigationId;
+  $('#modal-form').dataset.agentEmergencyActive = String(activate);
+}
+async function refreshAgentActivity(investigationId) {
+  const state = intelligenceState.activity;
+  state.loaded = false;
+  state.loadedId = '';
+  await loadIntelligencePage('agent-activity', investigationId);
+}
+async function assignAgentTask(taskId, bidId) {
+  const investigationId = intelligenceState.activity.selectedId;
+  try {
+    await apiRequest(`/api/agents/tasks/${encodeURIComponent(taskId)}/assign`, { method: 'POST', body: { bid_id: bidId } });
+    toast('Task assignment updated and recorded.');
+    await refreshAgentActivity(investigationId);
+  } catch (error) { toast(error.message, true); }
+}
+async function executeAgentTask(taskId) {
+  const investigationId = intelligenceState.activity.selectedId;
+  try {
+    await apiRequest(`/api/agents/tasks/${encodeURIComponent(taskId)}/execute`, { method: 'POST', body: {} });
+    toast('Selected task queued in the existing investigation worker.');
+    await refreshAgentActivity(investigationId);
+  } catch (error) { toast(error.message, true); }
+}
+async function cancelAgentTask(taskId) {
+  const investigationId = intelligenceState.activity.selectedId;
+  try {
+    await apiRequest(`/api/agents/tasks/${encodeURIComponent(taskId)}/cancel`, { method: 'POST', body: {} });
+    toast('Task cancellation recorded.');
+    await refreshAgentActivity(investigationId);
+  } catch (error) { toast(error.message, true); }
+}
+async function updateAgentPermission(agentId, permission, allowed) {
+  try {
+    await apiRequest('/api/agents/permissions', { method: 'POST', body: { agent_id: agentId, permission, allowed } });
+    toast(`Agent ${permission.replaceAll('_', ' ')} permission ${allowed ? 'enabled' : 'disabled'}.`);
+    await refreshAgentActivity(intelligenceState.activity.selectedId);
+  } catch (error) { toast(error.message, true); }
+}
+async function signAndConfirmNearCommitment(prepared) {
+  try {
+    if (!nearState.wallet) throw new Error('Connect the NEAR wallet again before signing.');
+    const call = prepared.transaction;
+    const result = await nearState.wallet.signAndSendTransaction({
+      receiverId: call.receiver_id,
+      actions: [{ type: 'FunctionCall', params: {
+        methodName: call.method_name, args: call.args, gas: call.gas, deposit: call.deposit,
+      }}],
+    });
+    const transactionHash = result?.transaction?.hash;
+    if (!transactionHash) throw new Error('The wallet did not return a NEAR transaction hash.');
+    toast('NEAR transaction submitted. Waiting for final testnet confirmation…');
+    const confirmed = await apiRequest(`/api/near/commitments/${encodeURIComponent(prepared.id)}/confirm`, {
+      method: 'POST', body: { transaction_hash: transactionHash },
+    });
+    toast(confirmed.status === 'confirmed' ? 'Report digest confirmed on NEAR testnet.' : 'NEAR transaction is still pending final confirmation.');
+  } catch (error) {
+    toast(error.message || 'NEAR wallet transaction was cancelled or failed.', true);
+  } finally {
+    nearState.historyLoaded = false;
+    const report = intelligenceState.reports.report;
+    if (report) await selectInvestigationReport(report.investigation_id, report.version);
+    if (routeInfo().page === 'near-account') renderShell();
+  }
+}
+async function confirmNearCommitment(commitmentId) {
+  const commitment = intelligenceState.reports.nearCommitments.find((item) => item.id === commitmentId);
+  if (!commitment?.transaction_hash) { toast('No submitted NEAR transaction is available to check.', true); return; }
+  try {
+    const result = await apiRequest(`/api/near/commitments/${encodeURIComponent(commitmentId)}/confirm`, {
+      method: 'POST', body: { transaction_hash: commitment.transaction_hash },
+    });
+    toast(result.status === 'confirmed' ? 'Report digest confirmed on NEAR testnet.' : 'NEAR transaction is still pending.');
+  } catch (error) { toast(error.message, true); }
+  nearState.historyLoaded = false;
+  const report = intelligenceState.reports.report;
+  if (report) await selectInvestigationReport(report.investigation_id, report.version);
+  if (routeInfo().page === 'near-account') renderShell();
 }
 function showReportAnchorSubmission(anchorId) {
   const report = intelligenceState.reports.report; const anchor = report?.anchor;
@@ -1020,6 +1292,49 @@ async function submitProject(form) {
 async function submitModal(form) {
   if (!form.reportValidity()) return;
   const data = new FormData(form);
+  if (form.dataset.nearReportId) {
+    const report = intelligenceState.reports.report;
+    if (!nearState.accountId || !report || report.id !== form.dataset.nearReportId) {
+      toast('The selected report or connected NEAR account is no longer available.', true);
+      return;
+    }
+    try {
+      const prepared = await apiRequest('/api/near/commitments/prepare', {
+        method: 'POST', body: {
+          report_id: report.id, near_account_id: nearState.accountId,
+          reason: String(data.get('reason')).trim(),
+        },
+      });
+      $('#modal-root').innerHTML = '';
+      await signAndConfirmNearCommitment(prepared);
+    } catch (error) { toast(error.message, true); }
+    return;
+  }
+  if (form.dataset.agentBudgetTaskId) {
+    const investigationId = form.dataset.agentBudgetInvestigationId;
+    try {
+      await apiRequest(`/api/agents/budgets/${encodeURIComponent(investigationId)}/approve`, {
+        method: 'POST', body: { task_id: form.dataset.agentBudgetTaskId, reason: String(data.get('reason')).trim() },
+      });
+      $('#modal-root').innerHTML = '';
+      toast('Internal task budget approved. No token transfer was made.');
+      await refreshAgentActivity(investigationId);
+    } catch (error) { toast(error.message, true); }
+    return;
+  }
+  if (form.dataset.agentEmergencyInvestigationId) {
+    const investigationId = form.dataset.agentEmergencyInvestigationId;
+    const activate = form.dataset.agentEmergencyActive === 'true';
+    try {
+      await apiRequest(`/api/agents/budgets/${encodeURIComponent(investigationId)}/freeze`, {
+        method: 'POST', body: { frozen: activate, emergency_stop: activate, reason: String(data.get('reason')).trim() },
+      });
+      $('#modal-root').innerHTML = '';
+      toast(activate ? 'Agent emergency stop activated.' : 'Investigation treasury unfrozen.');
+      await refreshAgentActivity(investigationId);
+    } catch (error) { toast(error.message, true); }
+    return;
+  }
   if (form.dataset.reportAnchorApprovalId) {
     const report = intelligenceState.reports.report;
     try {

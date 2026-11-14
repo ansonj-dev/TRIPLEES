@@ -43,6 +43,8 @@ from .ai_routes import router as ai_router
 from .document_routes import router as document_router
 from .investigation_routes import router as investigation_router
 from .report_anchor_routes import router as report_anchor_router
+from .near_routes import router as near_router
+from .agent_routes import router as agent_router
 from .services.integrity import WEIGHTS, update_score
 from .services.x1_chain import X1ChainClient, X1ConfigurationError, X1NetworkError
 from .storage import EvidenceStorageError, check_storage, delete_all_local_evidence_except, get_evidence, put_evidence
@@ -96,6 +98,8 @@ app.include_router(ai_router)
 app.include_router(document_router)
 app.include_router(investigation_router)
 app.include_router(report_anchor_router)
+app.include_router(near_router)
+app.include_router(agent_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,

@@ -1,0 +1,13 @@
+{
+  "name": "triplees-near-report-registry-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:wasm": "cargo near build non-reproducible-wasm",
+    "test:sandbox": "npm run build:wasm && node --test tests/*.test.mjs",
+    "test": "cargo test && npm run test:sandbox"
+  },
+  "devDependencies": {
+    "near-workspaces": "5.0.0"
+  }
+}

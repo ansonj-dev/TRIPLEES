@@ -8,12 +8,14 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .db import get_db
-from .models import (AgentAuditEvent, AgentExecution, AgentFinding, EvidenceFile, FindingReview,
-                     Investigation, InvestigationReport, InvestigationReportAnchor, Profile, Project, SourceReference, utcnow)
+from .models import (AgentAuditEvent, AgentExecution, AgentFinding, AgentTask, EvidenceFile, FindingReview,
+                     Investigation, InvestigationBudget, InvestigationReport, InvestigationReportAnchor,
+                     Profile, Project, SourceReference, utcnow)
 from .schemas import FindingReviewRequest, InvestigationCreate, InvestigationRetry
 from .security import current_user
 from .services.investigation_reports import _citations, create_report_snapshot, finding_dict
 from .services.report_anchoring import CANONICALIZATION, report_sha256
+from .services.agent_coordination import CoordinationError, ensure_task_plan
 
 router = APIRouter()
 TERMINAL = {"cancelled", "completed", "completed_with_limitations", "partial", "failed"}
@@ -120,13 +122,23 @@ def run_investigation(investigation_id: str, response: Response, db: Session = D
         return _view(row)
     if row.status not in {"draft", "partial", "failed", "completed_with_limitations"}:
         raise HTTPException(409, detail={"code": "investigation_not_runnable", "message": "Investigation cannot be queued in its current state."})
+    try:
+        tasks = ensure_task_plan(db, row)
+    except CoordinationError as exc:
+        raise HTTPException(409, detail={"code": "agent_budget_limit", "message": str(exc)}) from exc
+    budget = db.scalar(select(InvestigationBudget).where(InvestigationBudget.investigation_id == row.id))
+    if budget and (budget.frozen or budget.emergency_stop):
+        raise HTTPException(409, detail={"code": "agent_budget_frozen", "message": "The investigation budget is frozen or the emergency stop is active."})
+    if any(task.status == "awaiting_review" for task in tasks):
+        raise HTTPException(409, detail={"code": "agent_budget_approval_required", "message": "One or more agent task estimates require reviewer approval before execution."})
     row.status = "queued"
     row.cancel_requested = False
+    row.requested_agent_keys_json = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
     row.updated_at = utcnow()
-    _event(db, row, "investigation_queued")
+    _event(db, row, "investigation_queued", {"coordinated_task_count": len(tasks)})
     db.commit()
     return _view(row)
 
@@ -140,6 +152,9 @@ def cancel_investigation(investigation_id: str, db: Session = Depends(get_db), u
         row.status = "cancelled"
         row.cancel_requested = True
         row.completed_at = utcnow()
+        for task in db.scalars(select(AgentTask).where(AgentTask.investigation_id == row.id, AgentTask.status.in_(["assigned", "running"]))):
+            task.status = "cancelled"
+            task.completed_at = utcnow()
     else:
         row.status = "cancel_requested"
         row.cancel_requested = True
@@ -154,8 +169,15 @@ def retry_investigation(investigation_id: str, body: InvestigationRetry, db: Ses
     row = _get(db, investigation_id, user)
     if row.status not in {"failed", "partial"}:
         raise HTTPException(409, detail={"code": "investigation_not_retryable", "message": "Only failed or partial investigations can be retried."})
+    try:
+        tasks = ensure_task_plan(db, row)
+    except CoordinationError as exc:
+        raise HTTPException(409, detail={"code": "agent_budget_limit", "message": str(exc)}) from exc
+    if any(task.status == "awaiting_review" for task in tasks):
+        raise HTTPException(409, detail={"code": "agent_budget_approval_required", "message": "One or more agent task estimates require reviewer approval before retry."})
     row.status = "queued"
     row.cancel_requested = False
+    row.requested_agent_keys_json = None
     row.failure_summary = None
     row.completed_at = None
     row.next_attempt_at = utcnow()
