@@ -272,6 +272,8 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                     row.completed_at = utcnow()
                     row.lease_expires_at = None
                     row.worker_id = None
+                    row.requested_agent_task_id = None
+                    row.requested_agent_keys_json = None
                     if task:
                         task.status = "cancelled"
                         task.completed_at = utcnow()
