@@ -39,6 +39,7 @@ class AgentContext:
     source_references: list[dict[str, Any]] = field(default_factory=list)
     external_ai_authorized: bool = False
     public_research_authorized: bool = False
+    external_service_allowed: bool = False
     ai_budget_exhausted: bool = False
 
     @property
@@ -131,6 +132,15 @@ class ScopedAgent:
             return AgentExecutionResult(
                 self.agent_key, "completed_with_limitations", self.task_summary,
                 self.local_output(context), "external_ai_not_authorized",
+            )
+        if not context.external_service_allowed:
+            local = self.local_output(context)
+            output = local.model_copy(update={
+                "limitations": list(dict.fromkeys(local.limitations + ["External service access is disabled for this agent by reviewer policy."]))
+            })
+            return AgentExecutionResult(
+                self.agent_key, "completed_with_limitations", self.task_summary,
+                output, "external_service_not_permitted",
             )
         try:
             health = self.provider.health_status()
