@@ -1,107 +1,190 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#071b18" />
-    <meta name="description" content="TRIPLEES connects carbon credit provenance, evidence review, registry conflict checks, and environmental risk monitoring in one transparent integrity workflow." />
-    <title>TRIPLEES — Investigate. Verify. Trace.</title>
-    <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="assets/css/styles.css" />
-    <link rel="stylesheet" href="assets/css/design-refresh.css?v=4" />
-  </head>
-  <body>
-    <header class="site-header" id="home">
-      <div class="nav-shell">
-        <a class="brand" href="#home" aria-label="TRIPLEES home">
-          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span>
-          <span>TRIPLEES</span>
-        </a>
-        <button class="menu-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span></button>
-        <nav class="primary-nav" id="primary-nav" aria-label="Primary navigation">
-          <a href="#features">Product</a><a href="#how-it-works">Workflow</a><a href="#demo">Demo</a><a href="#resources">FAQ</a>
-          <a class="button button-small button-primary nav-cta" href="auth.html">Open workspace <span aria-hidden="true">↗</span></a>
-        </nav>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#efe8d7" />
+  <meta name="description" content="TRIPLEES is a NEAR-integrated environmental evidence intelligence platform. Investigate project records, review findings, and verify approved report digests on NEAR." />
+  <title>TRIPLEES — Environmental Evidence, Verifiable on NEAR</title>
+  <link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="stylesheet" href="assets/css/design-refresh.css?v=4" />
+  <link rel="stylesheet" href="assets/css/near-identity.css?v=1" />
+</head>
+<body class="near-home">
+  <header class="n-header" id="home">
+    <div class="n-nav-shell">
+      <a class="n-brand" href="#home" aria-label="TRIPLEES home">
+        <span class="n-brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="n-brand-name">TRIPLEES</span>
+        <span class="n-brand-divider"></span>
+        <span class="n-brand-sub">EVIDENCE INTELLIGENCE</span>
+      </a>
+      <button class="menu-toggle n-menu-toggle" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation"><span></span><span></span></button>
+      <nav class="primary-nav n-primary-nav" id="primary-nav" aria-label="Primary navigation">
+        <a href="#platform">Platform</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#near">Why NEAR</a>
+        <a href="#trust">Trust model</a>
+        <a class="n-nav-cta" href="auth.html">Open workspace <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="n-hero" aria-labelledby="n-hero-title">
+      <div class="n-hero-grid">
+        <div class="n-hero-copy">
+          <p class="n-kicker"><span class="n-kicker-dot"></span> BUILT FOR ENVIRONMENTAL ACCOUNTABILITY <span class="n-kicker-sep">/</span> NEAR INTEGRATED</p>
+          <h1 id="n-hero-title">Make every environmental claim <em>traceable.</em></h1>
+          <p class="n-lead">TRIPLEES turns project documents, registry records and monitoring observations into reviewable investigations. NEAR adds a public integrity layer for approved reports — without publishing private evidence.</p>
+          <div class="n-hero-actions">
+            <a class="n-button n-button-blue" href="auth.html">Enter TRIPLEES <span aria-hidden="true">↗</span></a>
+            <a class="n-text-link" href="#near">Explore the NEAR layer <span aria-hidden="true">↓</span></a>
+          </div>
+          <div class="n-hero-note"><span class="n-mono">01 / THE PRINCIPLE</span><span>Evidence stays inspectable. Decisions stay human. Report integrity becomes independently checkable.</span></div>
+        </div>
+        <div class="n-hero-art" aria-label="Abstract evidence network connected to a report record on NEAR">
+          <div class="n-art-topline"><span>TRIPLEES / NETWORK MODEL</span><span>FIG. 001</span></div>
+          <svg class="n-orbit-graphic" viewBox="0 0 560 500" role="img" aria-labelledby="orbit-title orbit-desc">
+            <title id="orbit-title">Evidence-to-verification network</title>
+            <desc id="orbit-desc">Document, reviewer, report and NEAR nodes connected around a central report digest.</desc>
+            <defs>
+              <pattern id="n-dot-grid" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="1.3" r="1" fill="#8b9b9b" opacity=".55"/></pattern>
+              <radialGradient id="n-globe-fill"><stop offset="0" stop-color="#dfe7dc"/><stop offset="1" stop-color="#e9e1cd"/></radialGradient>
+            </defs>
+            <circle cx="280" cy="246" r="184" fill="url(#n-dot-grid)" stroke="#9da9a2" stroke-dasharray="1 6"/>
+            <circle cx="280" cy="246" r="135" fill="url(#n-globe-fill)" stroke="#9da9a2" stroke-width="1"/>
+            <circle cx="280" cy="246" r="100" fill="none" stroke="#b9c2b7" stroke-dasharray="2 6"/>
+            <ellipse cx="280" cy="246" rx="48" ry="135" fill="none" stroke="#aebbb2" />
+            <ellipse cx="280" cy="246" rx="94" ry="43" fill="none" stroke="#aebbb2"/>
+            <path d="M145 246H415M280 111V381M185 160L375 332M374 160L186 332" stroke="#aebbb2" stroke-width="1" opacity=".8"/>
+            <path d="M280 246L88 98M280 246L465 112M280 246L456 378M280 246L92 390" stroke="#216ed0" stroke-width="1.6" stroke-dasharray="4 6"/>
+            <path d="M280 246L280 66M280 246L280 430" stroke="#216ed0" stroke-width="1.2" stroke-dasharray="3 7"/>
+            <circle cx="280" cy="246" r="45" fill="#0c67cf"/>
+            <circle cx="280" cy="246" r="35" fill="#0c67cf" stroke="#fff" stroke-opacity=".5"/>
+            <text x="280" y="241" text-anchor="middle" fill="#fff" font-size="12" font-family="IBM Plex Mono">REPORT</text>
+            <text x="280" y="258" text-anchor="middle" fill="#fff" font-size="11" font-family="IBM Plex Mono">SHA-256</text>
+            <g fill="#f4eddd" stroke="#0c67cf" stroke-width="2">
+              <circle cx="88" cy="98" r="17"/><circle cx="465" cy="112" r="17"/><circle cx="456" cy="378" r="17"/><circle cx="92" cy="390" r="17"/><circle cx="280" cy="66" r="13"/><circle cx="280" cy="430" r="13"/>
+            </g>
+            <g fill="#0c67cf" font-family="IBM Plex Mono" font-size="10" text-anchor="middle">
+              <text x="88" y="102">01</text><text x="465" y="116">02</text><text x="456" y="382">03</text><text x="92" y="394">04</text><text x="280" y="70">N</text><text x="280" y="434">R</text>
+            </g>
+          </svg>
+          <div class="n-art-label n-art-label-a"><b>01</b><span>Source evidence</span></div>
+          <div class="n-art-label n-art-label-b"><b>02</b><span>Human review</span></div>
+          <div class="n-art-label n-art-label-c"><b>03</b><span>NEAR commitment</span></div>
+          <div class="n-art-label n-art-label-d"><b>04</b><span>Public verification</span></div>
+          <div class="n-art-caption"><span class="n-live-mark"></span><span>ON-CHAIN RECORD</span><strong>DIGEST ONLY</strong></div>
+        </div>
       </div>
-    </header>
+      <div class="n-hero-bottom">
+        <div><span class="n-mono">01 — WHAT IT IS</span><strong>Environmental evidence intelligence</strong></div>
+        <div><span class="n-mono">02 — WHAT NEAR DOES</span><strong>Publicly verifiable report integrity</strong></div>
+        <div><span class="n-mono">03 — WHAT STAYS HUMAN</span><strong>Review, judgment and approval</strong></div>
+      </div>
+    </section>
 
-    <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-image" role="img" aria-label="Aerial view of a protected forest canopy and winding river"></div>
-        <div class="hero-shade"></div>
-        <div class="container hero-content">
-          <p class="hero-kicker">Climate project integrity</p>
-          <h1 id="hero-title">Follow every claim back to its evidence.</h1>
-          <p class="hero-copy">Bring project records, supporting documents, registry data, and review decisions into one clear workspace.</p>
-          <div class="hero-actions"><a class="button button-mint" href="auth.html">Explore the workspace <span aria-hidden="true">→</span></a><a class="button button-glass" href="#demo">View the demo</a></div>
+    <section class="n-near-band" id="near" aria-labelledby="n-near-title">
+      <div class="n-band-top"><span>THE VERIFICATION LAYER</span><span>NEAR PROTOCOL <b>↗</b></span><span>02 / 05</span></div>
+      <div class="n-band-content">
+        <div>
+          <p class="n-band-kicker">WHY NEAR IS PART OF TRIPLEES</p>
+          <h2 id="n-near-title">A report can be checked beyond the system that created it.</h2>
         </div>
-        <div class="container trust-row" aria-label="Platform principles">
-          <div class="trust-item"><span class="icon-disc"><svg viewBox="0 0 24 24"><path d="M20 4C10 4 4 8 4 14c0 3.5 2.5 5.5 5.5 5.5C15.5 19.5 20 13 20 4Z"/><path d="M3 21c4-6 8-9 13-12"/></svg></span><span>Traceable<br/>project records</span></div>
-          <div class="trust-item"><span class="icon-disc"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span><span>Evidence<br/>review</span></div>
-          <div class="trust-item"><span class="icon-disc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Risk signals<br/>for review</span></div>
-          <div class="trust-item"><span class="icon-disc"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></span><span>Human<br/>decisions</span></div>
+        <div class="n-band-explain">
+          <p>After a reviewer approves a report, TRIPLEES calculates a canonical SHA-256 digest. The reviewer’s NEAR wallet signs a call to the TRIPLEES registry contract. The contract records the report version and digest so the same report can be checked later by anyone with the original file.</p>
+          <a class="n-band-link" href="#workflow">See how the flow works <span aria-hidden="true">→</span></a>
         </div>
-      </section>
+      </div>
+      <div class="n-near-points">
+        <article><span class="n-mono">01 / USER CONTROL</span><h3>Your wallet signs</h3><p>NEAR Connect hands the transaction to the wallet. TRIPLEES does not hold a NEAR private key or sign on the user’s behalf.</p></article>
+        <article><span class="n-mono">02 / CONTRACT RULES</span><h3>Reviewer permission</h3><p>The registry accepts commitments only from accounts granted reviewer permission by the contract owner.</p></article>
+        <article><span class="n-mono">03 / PUBLIC CHECK</span><h3>Verify the exact file</h3><p>The public verifier recalculates the report digest and compares it with the saved commitment and contract state.</p></article>
+      </div>
+      <div class="n-band-foot"><span>NEAR TESTNET INTEGRATION</span><span>Contract deployment and reviewer permissions are configuration gates; the software does not claim a live commitment until chain verification succeeds.</span></div>
+    </section>
 
-      <section class="section section-soft" id="features">
-        <div class="container"><div class="section-heading"><p class="eyebrow">THE WORKSPACE</p><h2>Evidence, records, and decisions in context</h2><p>Built for teams that need to inspect the source behind a climate claim.</p></div>
-          <div class="feature-grid">
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 7v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span><h3>Traceable records</h3><p>Follow project and credit lifecycle events, with optional testnet references.</p></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2M5.6 5.6 4 4m14.4 1.6L20 4"/></svg></span><h3>Monitoring review</h3><p>Review imported observations and keep source, status, and uncertainty visible.</p></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/><circle cx="19" cy="6" r="1"/></svg></span><h3>Evidence intelligence</h3><p>Inspect extracted claim candidates with page, row, or field references.</p></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="5"/><circle cx="15" cy="15" r="5"/><path d="m12 8 4 4M8 12l4 4"/></svg></span><h3>Registry comparisons</h3><p>Compare supplied registry rows and flag potential serial or project overlaps.</p></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 12h5M8 15h8"/></svg></span><h3>Source-linked review</h3><p>Keep findings, evidence references, reviewer decisions, and reports connected.</p></article>
-            <article class="feature-card"><span class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.3-4 2.2-6 5.5-6s5.2 2 5.5 6M13 15c3.5-1 7.5.7 8.5 4"/></svg></span><h3>Human decisions</h3><p>Authorized reviewers own decisions on material findings and reports.</p></article>
-          </div>
+    <section class="n-platform section" id="platform">
+      <div class="n-section-heading">
+        <p class="n-section-index">03 / THE PLATFORM</p>
+        <div><p class="n-eyebrow">FROM EVIDENCE TO EXPLAINABLE REVIEW</p><h2>One workspace for the story behind the claim.</h2><p>TRIPLEES connects the records, analytical work and human decisions that sit behind an environmental project report.</p></div>
+        <span class="n-heading-aside">PRODUCT<br/>MAP / 2026</span>
+      </div>
+      <div class="n-feature-grid">
+        <article class="n-feature"><span class="n-feature-no">01</span><div class="n-feature-symbol">▤</div><h3>Evidence library</h3><p>Upload documents, fingerprint files and extract supported PDF, CSV, JSON and text content with page, row or field references.</p><span class="n-feature-tag">SOURCE RECORDS</span></article>
+        <article class="n-feature"><span class="n-feature-no">02</span><div class="n-feature-symbol">⌘</div><h3>Investigation agents</h3><p>Five bounded analytical roles organize evidence, research, integrity checks, monitoring signals and independent review.</p><span class="n-feature-tag">ASSISTIVE ANALYSIS</span></article>
+        <article class="n-feature"><span class="n-feature-no">03</span><div class="n-feature-symbol">◎</div><h3>Registry comparisons</h3><p>Compare supplied registry rows and highlight potential overlaps, serial conflicts and inconsistencies for inspection.</p><span class="n-feature-tag">SCOPED CHECKS</span></article>
+        <article class="n-feature"><span class="n-feature-no">04</span><div class="n-feature-symbol">⌁</div><h3>Monitoring review</h3><p>Keep observation source, time, severity, status and uncertainty visible. Imported and synthetic signals stay clearly labelled.</p><span class="n-feature-tag">SOURCE-AWARE SIGNALS</span></article>
+        <article class="n-feature"><span class="n-feature-no">05</span><div class="n-feature-symbol">✓</div><h3>Human review</h3><p>Authorized reviewers inspect findings, record decisions with reasons and create immutable report versions.</p><span class="n-feature-tag">HUMAN AUTHORITY</span></article>
+        <article class="n-feature n-feature-emphasis"><span class="n-feature-no">06</span><div class="n-feature-symbol">N</div><h3>NEAR report registry</h3><p>Commit approved report digests to NEAR testnet, then expose a public check for the exact report file.</p><span class="n-feature-tag">ON-CHAIN INTEGRITY</span></article>
+      </div>
+    </section>
+
+    <section class="n-workflow-section" id="workflow">
+      <div class="n-workflow-head"><p class="n-section-index">04 / THE WORKFLOW</p><h2>From a source file<br/>to a public proof.</h2><p>NEAR enters only after evidence has been examined and a human reviewer approves the report version.</p></div>
+      <div class="n-flow">
+        <article><span class="n-flow-step">01</span><div class="n-flow-icon">↧</div><h3>Collect</h3><p>Project records, uploaded evidence, imported registry data and monitoring observations.</p><small>OFF-CHAIN / PRIVATE WORKSPACE</small></article>
+        <span class="n-flow-arrow">→</span>
+        <article><span class="n-flow-step">02</span><div class="n-flow-icon">⌕</div><h3>Investigate</h3><p>Agents organize claims and sources. Deterministic checks and model suggestions remain distinguishable.</p><small>ANALYSIS / ADVISORY</small></article>
+        <span class="n-flow-arrow">→</span>
+        <article><span class="n-flow-step">03</span><div class="n-flow-icon">✓</div><h3>Approve</h3><p>A reviewer checks the finding trail and approves a specific version with a recorded reason.</p><small>HUMAN DECISION</small></article>
+        <span class="n-flow-arrow">→</span>
+        <article class="n-flow-near"><span class="n-flow-step">04</span><div class="n-flow-icon">N</div><h3>Commit on NEAR</h3><p>The connected wallet signs. The registry stores the digest and minimal version identifiers.</p><small>NEAR TESTNET / DIGEST ONLY</small></article>
+        <span class="n-flow-arrow">→</span>
+        <article><span class="n-flow-step">05</span><div class="n-flow-icon">⌁</div><h3>Verify</h3><p>Anyone can hash the downloaded report and compare it with the public contract record.</p><small>PUBLIC INTEGRITY CHECK</small></article>
+      </div>
+    </section>
+
+    <section class="n-boundary-section" id="trust">
+      <div class="n-boundary-header"><p class="n-section-index">05 / THE TRUST BOUNDARY</p><h2>Keep private data private.<br/><em>Put proof where it can be checked.</em></h2></div>
+      <div class="n-boundary-grid">
+        <article class="n-boundary-card n-offchain"><div class="n-boundary-top"><span>STAYS IN TRIPLEES</span><b>OFF-CHAIN</b></div><h3>Evidence and analysis</h3><ul><li>Original documents and uploaded evidence</li><li>Personal and project-sensitive information</li><li>Agent outputs, citations and reviewer reasons</li><li>Full report content and supporting context</li></ul></article>
+        <div class="n-boundary-divider"><span>SHA-256</span><b>→</b></div>
+        <article class="n-boundary-card n-onchain"><div class="n-boundary-top"><span>RECORDED ON NEAR</span><b>ON-CHAIN</b></div><h3>Integrity commitment</h3><ul><li>Investigation identifier and report version</li><li>Canonical report digest</li><li>Submitting NEAR account</li><li>Contract timestamp and optional metadata digest</li></ul></article>
+      </div>
+      <p class="n-boundary-note">A matching digest means the supplied bytes match the committed report version. It does not prove that the report is accurate, that an environmental outcome occurred, or that a carbon credit is certified.</p>
+    </section>
+
+    <section class="n-distinction">
+      <div class="n-distinction-head"><p class="n-section-index">WHAT MAKES TRIPLEES DIFFERENT</p><h2>Not a token marketplace.<br/>An evidence-to-verification workflow.</h2></div>
+      <div class="n-distinction-body">
+        <p>Many blockchain climate products center their experience on issuing, trading or retiring digital assets. TRIPLEES focuses on the quality and traceability of the records behind a claim. NEAR is used as a verifiable integrity layer after a human review — not as a source of environmental truth.</p>
+        <div class="n-distinction-list">
+          <div><b>01</b><span>Evidence first, token mechanics second — no token sale, carbon token or marketplace is required for the core workflow.</span></div>
+          <div><b>02</b><span>Digest-only anchoring — private files and full reports are not placed on the public chain.</span></div>
+          <div><b>03</b><span>Human-approved commitments — agents cannot approve a report or sign a transaction.</span></div>
+          <div><b>04</b><span>Independent verification — the public check compares the original report bytes with the committed digest.</span></div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="section process-section" id="how-it-works">
-        <div class="container"><div class="section-heading"><p class="eyebrow">A REVIEWABLE WORKFLOW</p><h2>Move from source to decision</h2><p>Each step keeps the underlying record available for inspection.</p></div>
-          <div class="process-grid">
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8M5 10v10h14V10M9 20v-6h6v6"/></svg></span><span class="step-number">01</span></div><h3>Add project records</h3><p>Enter project details, upload evidence, and import available registry rows.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM8 9h8M8 12h5M8 15h8"/><path d="m15 15 1.5 1.5L20 13"/></svg></span><span class="step-number">02</span></div><h3>Extract and compare</h3><p>Extract candidate claims, compare supplied records, and preserve source locations.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 16h6"/></svg></span><span class="step-number">03</span></div><h3>Investigate</h3><p>Bring scoped evidence and available sources into an investigation.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M7 15l4-4 3 2 5-7"/></svg></span><span class="step-number">04</span></div><h3>Review findings</h3><p>Inspect evidence links, limitations, uncertainty, and decisions from authorized reviewers.</p></article>
-            <article class="process-step"><div class="process-top"><span class="process-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg></span><span class="step-number">05</span></div><h3>Report</h3><p>Preserve a versioned summary and its review history.</p></article>
-          </div>
-        </div>
-      </section>
+    <section class="n-faq-section">
+      <div class="n-faq-intro"><p class="n-section-index">QUESTIONS / ANSWERS</p><h2>Know what the record means.</h2><p>TRIPLEES is designed to make its limits as visible as its capabilities.</p><a class="n-text-link" href="auth.html">Explore the workspace <span>↗</span></a></div>
+      <div class="n-faq-list">
+        <details><summary>Why does TRIPLEES use NEAR?<span>＋</span></summary><p>NEAR provides the public contract layer for approved report-digest commitments. A wallet signs the transaction, the registry records a versioned digest, and the public verifier can check the report later.</p></details>
+        <details><summary>Does NEAR store the evidence files?<span>＋</span></summary><p>No. Original evidence, report contents, private context and reviewer reasons stay off-chain. The contract stores a digest and minimal identifiers needed to verify report integrity.</p></details>
+        <details><summary>Does a verified digest mean a climate claim is true?<span>＋</span></summary><p>No. It proves only that the supplied report bytes match the digest recorded for that version. Source quality, methodology, environmental outcomes and credit eligibility still require independent assessment.</p></details>
+        <details><summary>Is the NEAR wallet the same as my TRIPLEES login?<span>＋</span></summary><p>No. The application session controls access to the workspace. The NEAR wallet is connected separately and is used by an authorized reviewer to sign a report commitment.</p></details>
+        <details><summary>Is the NEAR registry live right now?<span>＋</span></summary><p>The repository includes the NEAR testnet integration and wallet flow, but a contract ID, deployment and reviewer permission must be configured before real commitments can be submitted. The interface should show the configured state rather than imply a live deployment.</p></details>
+        <details><summary>Does this replace X1 EcoChain?<span>＋</span></summary><p>No. NEAR report commitments and the existing X1 workflows are separate integrations with separate configuration and contract paths. The NEAR product experience does not silently replace or disable X1.</p></details>
+      </div>
+    </section>
 
-      <section class="demo-section" id="demo">
-        <div class="container demo-grid">
-          <div class="demo-copy"><p class="eyebrow eyebrow-light">WORKSPACE PREVIEW</p><h2>See the record<br/>behind the review.</h2><p>Explore a sample project, its evidence status, and the decisions that need attention.</p><span class="demo-stamp"><span class="live-dot"></span> SAMPLE DATA</span><a class="button button-mint" href="auth.html">Open the workspace <span aria-hidden="true">→</span></a></div>
-          <div class="dashboard" id="dashboard-preview" aria-label="Illustrative TRIPLEES dashboard mockup">
-            <div class="dashboard-bar"><div class="dash-brand"><span class="brand-mark tiny" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span> TRIPLEES</div><span class="dash-demo">DEMO ENVIRONMENT</span><span class="avatar">JD</span></div>
-            <div class="dash-layout"><aside class="dash-sidebar"><span class="side-active">◫ &nbsp; Overview</span><span>▧ &nbsp; Projects</span><span>▤ &nbsp; Credit registry</span><span>⌕ &nbsp; Evidence review</span><span>⌁ &nbsp; Risk monitor</span><span>◎ &nbsp; Public explorer</span><div class="side-profile"><span class="avatar small-avatar">JD</span><span>Demo reviewer<small>Sample data</small></span></div></aside>
-              <div class="dash-main"><div class="dash-title"><div><small>PROJECT OVERVIEW / DEMO DATA</small><h3>Good morning, Jordan</h3></div><button class="dash-filter" type="button" aria-label="Selected period: demo snapshot">Demo snapshot⌄</button></div>
-                <div class="stat-grid"><div class="stat-card"><small>ACTIVE PROJECTS</small><strong>01</strong><span>Illustrative data</span></div><div class="stat-card"><small>CREDITS REVIEWED</small><strong>—</strong><span>No live records</span></div><div class="stat-card risk-stat"><small>CREDITS AT RISK</small><strong>—</strong><span>Not connected</span></div><div class="stat-card"><small>MONITORED AREA</small><strong>—</strong><span>No live feed</span></div></div>
-                <div class="dash-content-grid"><article class="project-panel"><div class="panel-heading"><div><small>FEATURED DEMO PROJECT</small><h4>Amazon Forest Reserve</h4></div><span class="status-chip">SYNTHETIC</span></div><img src="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=900&q=80" alt="Dense green forest canopy in a demonstration project" loading="lazy"/><div class="project-meta"><span>Project reference<strong>DEMO-FOREST-001</strong></span><span>Evidence state<strong>Sample only</strong></span><span>Registry source<strong>Not connected</strong></span></div><div class="timeline"><span class="timeline-dot"></span><span><strong>Project created</strong><small>Sample event · no chain transaction</small></span><time>Demo</time></div></article>
-                  <article class="review-panel"><div class="panel-heading"><div><small>INTEGRITY WORKFLOW</small><h4>Evidence passport</h4></div><span class="passport-icon">⌁</span></div><div class="review-state"><span class="review-symbol">✓</span><span><strong>Ready for review</strong><small>Illustrative workflow state</small></span></div><div class="review-row"><span>Project evidence</span><b>Sample set</b></div><div class="review-row"><span>Registry conflicts</span><b>Not checked</b></div><div class="review-row"><span>Monitoring source</span><b>Not connected</b></div><div class="review-callout">Synthetic records · not certified credits.</div></article></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <section class="n-final-cta">
+      <div><p class="n-eyebrow">TRIPLEES / INVESTIGATE. VERIFY. TRACE.</p><h2>Start with the evidence.<br/>Finish with a verifiable record.</h2><p>Explore the workspace using sample data, then connect a NEAR testnet wallet when the registry is configured.</p></div>
+      <a class="n-button n-button-light" href="auth.html">Open TRIPLEES <span>↗</span></a>
+    </section>
+  </main>
 
-      <section class="section faq-section" id="resources">
-        <div class="container faq-grid"><div class="faq-intro"><p class="eyebrow">FAQ</p><h2>Clear answers about the data.</h2><p>What the workspace checks, what it stores, and where its limits are.</p></div><div class="faq-list">
-          <details><summary>What is TRIPLEES?<span aria-hidden="true"></span></summary><p>TRIPLEES organizes project records, evidence review, available registry data, and monitoring signals in a traceable workspace.</p></details>
-          <details><summary>How does TRIPLEES prevent double counting?<span aria-hidden="true"></span></summary><p>It can flag potential conflicts in records that have been imported or connected. Checks do not cover registries or datasets that are unavailable.</p></details>
-          <details><summary>Is the data publicly available?<span aria-hidden="true"></span></summary><p>Public views can show non-sensitive project details and evidence references. Private documents and sensitive information should remain protected.</p></details>
-          <details><summary>Can I integrate my own data?<span aria-hidden="true"></span></summary><p>Data imports are available; external connectors depend on the integrations configured for a workspace.</p></details>
-          <details><summary>Does TRIPLEES certify credits?<span aria-hidden="true"></span></summary><p>No. The workspace supports review and traceability. It does not certify environmental outcomes or guarantee climate claims.</p></details>
-        </div></div>
-      </section>
-
-    </main>
-
-    <footer class="site-footer" id="footer"><div class="container footer-main"><div class="footer-brand"><a class="brand footer-logo" href="#home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M25.7 5.8C14.2 5.5 7.1 10 7.1 17.4c0 4.5 3.3 7.3 7.2 7.3 8 0 11.4-8.5 11.4-18.9Z"/><path d="M5 26.5c4.5-7.8 9.4-12.4 16.5-16.2"/></svg></span><span>TRIPLEES</span></a><p>Evidence in context.<br/>Decisions with a source trail.</p></div>
-        <div class="footer-links"><div><h3>Explore</h3><a href="#features">Product</a><a href="#how-it-works">Workflow</a><a href="#demo">Workspace preview</a></div><div><h3>Account</h3><a href="auth.html">Open workspace</a><a href="#resources">Frequently asked questions</a></div></div>
-      </div><div class="container footer-bottom"><span>© <span id="current-year"></span> TRIPLEES</span><span>Synthetic demo records are not certified credits.</span><a href="#home">Back to top ↑</a></div></footer>
-    <script src="assets/js/script.js"></script>
-  </body>
+  <footer class="n-footer">
+    <div class="n-footer-top"><a class="n-brand" href="#home"><span class="n-brand-mark"><span></span><span></span><span></span></span><span class="n-brand-name">TRIPLEES</span></a><p>Environmental evidence intelligence with human review and NEAR-backed report integrity.</p><div class="n-footer-links"><a href="#platform">Platform</a><a href="#near">NEAR layer</a><a href="#trust">Trust model</a><a href="auth.html">Workspace</a></div></div>
+    <div class="n-footer-bottom"><span>© <span id="current-year"></span> TRIPLEES</span><span>NEAR TESTNET INTEGRATION · DIGEST-ONLY COMMITMENTS</span><a href="#home">BACK TO TOP ↑</a></div>
+  </footer>
+  <script src="assets/js/script.js"></script>
+</body>
 </html>
