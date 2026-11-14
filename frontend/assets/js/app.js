@@ -104,8 +104,14 @@ let riskFilters = { query: '', severity: 'All', status: 'All' };
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-const niceDate = (value) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)) : '—';
-const niceDateTime = (value) => value ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
+const formatSafeDate = (value, options) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return 'Invalid date';
+  return new Intl.DateTimeFormat(undefined, options).format(parsed);
+};
+const niceDate = (value) => formatSafeDate(value, { dateStyle: 'medium' });
+const niceDateTime = (value) => formatSafeDate(value, { dateStyle: 'medium', timeStyle: 'short' });
 const formatTonnes = (kg) => `${(Number(kg || 0) / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} tCO₂e`;
 const formatKg = (kg) => `${Number(kg || 0).toLocaleString()} kg CO₂e`;
 const id = (prefix) => `${prefix}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
