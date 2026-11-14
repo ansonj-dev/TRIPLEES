@@ -238,6 +238,8 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
                 row.completed_at = utcnow()
                 row.lease_expires_at = None
                 row.worker_id = None
+                row.requested_agent_task_id = None
+                row.requested_agent_keys_json = None
                 for pending_task in db.scalars(select(AgentTask).where(
                     AgentTask.investigation_id == row.id,
                     AgentTask.status.in_(["assigned", "running"]),
@@ -416,6 +418,8 @@ def process_job(investigation_id: str, worker_id: str, agent_suite=AGENT_SUITE) 
             return
         if row.cancel_requested or row.status == "cancel_requested":
             row.status = "cancelled"
+            row.requested_agent_task_id = None
+            row.requested_agent_keys_json = None
             _audit(db, row.id, "investigation_cancelled")
         elif failed_any:
             row.status = "partial"
