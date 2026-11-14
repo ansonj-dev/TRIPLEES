@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 import re
 from typing import Literal
 
@@ -111,6 +111,17 @@ class ObservationCreate(APIModel):
     evidence_hash: str | None = Field(default=None, pattern=r"^[a-fA-F0-9]{64}$")
     description: str = Field(min_length=5, max_length=4000)
     is_synthetic: bool = True
+
+    @field_validator("observed_at")
+    @classmethod
+    def validate_observed_at(cls, value: str) -> str:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError("observed_at must be a valid ISO 8601 datetime with a timezone.") from exc
+        if parsed.tzinfo is None or parsed.utcoffset() is None:
+            raise ValueError("observed_at must include a timezone, such as Z or +05:30.")
+        return parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class AlertReviewRequest(ReasonRequest):
