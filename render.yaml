@@ -11,10 +11,6 @@ services:
     envVars:
       - key: APP_ENV
         value: development
-      - key: DATABASE_URL
-        fromDatabase:
-          name: triplees-free-db
-          property: connectionString
       - key: VERICARB_DATA_DIR
         value: /tmp/triplees-data
       - key: VERICARB_TOKEN_SECRET
@@ -43,10 +39,3 @@ services:
         value: nvidia/nemotron-3-super-120b-a12b
       - key: AI_DAILY_TOKEN_LIMIT
         value: "100000"
-databases:
-  - name: triplees-free-db
-    databaseName: triplees
-    user: triplees
-    plan: free
-    region: singapore
-    postgresMajorVersion: "16"
