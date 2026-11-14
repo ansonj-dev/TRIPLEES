@@ -203,6 +203,17 @@ def confirm_near_commitment(commitment_id: str, body: ConfirmCommitmentRequest, 
             body.transaction_hash, row.near_account_id, row.contract_id, _expected(row),
         )
     except NearTransactionMismatch as exc:
+        # A conclusively mismatched transaction must not permanently lock the
+        # pending commitment to the wrong hash. Keep an audit trail and permit
+        # the reviewer to submit the correct transaction hash.
+        rejected_hash = row.transaction_hash
+        row.transaction_hash = None
+        row.failure_summary = "A submitted transaction did not match the approved report commitment."
+        _event(db, investigation, "near_report_commitment_transaction_rejected", {
+            "commitment_id": row.id, "rejected_transaction_hash": rejected_hash,
+            "reason": str(exc), "near_account_id": row.near_account_id,
+        })
+        db.commit()
         raise HTTPException(422, detail={"code": "near_transaction_mismatch", "message": str(exc)}) from exc
     except NearNetworkError as exc:
         raise HTTPException(503, detail={"code": "near_wrong_network", "message": str(exc)}) from exc
