@@ -57,7 +57,7 @@ def _view(row: Investigation, executions: list[AgentExecution] | None = None) ->
         "created_at": row.created_at.isoformat() if row.created_at else None,
         "started_at": row.started_at.isoformat() if row.started_at else None,
         "completed_at": row.completed_at.isoformat() if row.completed_at else None,
-        "executions": [{"id": x.id, "agent_key": x.agent_key, "attempt_number": x.attempt_number,
+        "executions": [{"id": x.id, "agent_key": x.agent_key, "task_id": x.task_id, "attempt_number": x.attempt_number,
                         "status": x.status, "task_summary": x.task_summary, "output": json.loads(x.output_json) if x.output_json else None,
                         "error_code": x.error_code, "started_at": x.started_at.isoformat() if x.started_at else None,
                         "completed_at": x.completed_at.isoformat() if x.completed_at else None} for x in (executions or [])],
